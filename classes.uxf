@@ -1,0 +1,39 @@
+<diagram program="umletino" version="15.1"><zoom_level>10</zoom_level><element><id>UMLClass</id><coordinates><x>330</x><y>400</y><w>180</w><h>100</h></coordinates><panel_attributes>Jogador
+--
+
+--
+
+
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>580</x><y>390</y><w>170</w><h>110</h></coordinates><panel_attributes>Inimigo
+--
+- 
+
+--
+
+
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>50</x><y>240</y><w>210</w><h>150</h></coordinates><panel_attributes>Obstaculo
+--
+- tamXY: tuple (int, int)
+- posXY: tuple (int, int)
+- sprite: list(image)
+
+--
+Explodir():void
+
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>200</x><y>10</y><w>210</w><h>150</h></coordinates><panel_attributes>Sprite
+--
+- tamXY: tuple (int, int)
+- posXY: tuple (int, int)
+- sprite: list(image)
+
+--
+Explodir():
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>170</x><y>150</y><w>120</w><h>110</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>100;10;10;90</additional_attributes></element><element><id>Relation</id><coordinates><x>420</x><y>300</y><w>70</w><h>120</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>50;10;10;100</additional_attributes></element><element><id>Relation</id><coordinates><x>550</x><y>300</y><w>130</w><h>110</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;110;90</additional_attributes></element><element><id>UMLClass</id><coordinates><x>420</x><y>210</y><w>180</w><h>100</h></coordinates><panel_attributes>Movel
+--
+
+--
+Andar(x: int, y: int): void
+Pular(x: int, y: int): void
+Atirar():
+
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>380</x><y>150</y><w>150</w><h>80</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;130;60</additional_attributes></element></diagram>
