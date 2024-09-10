@@ -1,0 +1,37 @@
+- jogo tipo plataforma;
+- jogo com rolagem horizontal*/vertical;
+- com 1 ou 2 jodadores;
+- modo multiplayer cooperativo*/competitivo;
+- com 3* fases
+- com 3* vidas - com 0 vidas o jogador morre;
+- vidas fixas*/flexiveis
+- máximo 5* tipos de inimigos diferentes
+- cada fim de fase tem 1 chefe/ fim da 3ª* fase
+- tem obstáculos*/buracos/
+- invunerável com algum item? não
+- item que aumenta velocidade? não
+- vai ter que coletar algo? moedas? sim
+- coletar objetos gera pontos? quantos? sim 50 cada
+- inimigos derrotados geram pontos? quantos? sim 100 chefe 1000
+- power-ups
+- buff/debuff
+
+
+funcionais
+- jogador
+	- andar 
+	- pular
+	- atirar
+- jogo
+	- salvar
+	- carregar
+	- 
+
+não-funcionais
+- performance - jogo roda a 60 fps
+- segurança - mensagens criptografadas
+- movimentação fluida do jogador
+- fundo móvel - cenário (3 camadas - velocidades distintas)
+ 
+restrições
+- não pode algo...
