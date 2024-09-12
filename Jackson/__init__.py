@@ -1,4 +1,4 @@
 from Jackson.Game import Jackson
 
-def run():
-    Jackson().play()
+def run(debug=False):
+    Jackson().play(debug)
