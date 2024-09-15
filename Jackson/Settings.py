@@ -36,59 +36,103 @@ class Settings:
      
     
     def load_images(self):
-        # carregando imagens
-        imagemFundo = pygame.image.load('Jackson/images/cenario.jpg').convert_alpha()
-        self.imagemFundo = pygame.transform.scale(imagemFundo,(WIDTH, HEIGHT))
+        """loading surfaces for sprites"""                
+        # cenario - clouds
+        clouds = pygame.image.load('Jackson/images/bg-clouds-cutout.png').convert_alpha()
+        left = [20]
+        top = [288]
+        w = [657]
+        h = [170] 
+        self.sky1, self.sky1_mask = self.cut_sub_surface(clouds, left, top, w, h, 2, full_screen=True)
         
+        # boxes
         self.box = pygame.image.load('Jackson/images/box.jpg').convert_alpha()
         self.box_mask = pygame.mask.from_surface(self.box)
         
+        # get light dance
+        full = pygame.image.load('Jackson/images/full-cutout.png').convert_alpha()
+        left = [1609]
+        top = [1704]
+        w = [74]
+        h = [223] 
+        self.dance, self.dance_mask = self.cut_sub_surface(full, left, top, w, h, 2)
+        
+        #attack - fire
+        left = [262,297,358]
+        top = [1105] * len(left)
+        w = [30,56,56]
+        h = [32] * len(w) 
+        self.fire, self.fire_masks = self.cut_sub_surface(full, left, top, w, h, 2)
+        self.fire_flip, self.fire_flip_masks = self.get_flipped(self.fire)
+        
+        #enemies
         enemy_all = pygame.image.load('Jackson/images/mobs-cutout.png').convert_alpha()        
-        left = [238]
-        top = [186]
-        w = [16]
-        h = [16] 
+        left = [238,257,219]
+        top = [186] * len(left)
+        w = [16] * len(left)
+        h = [16] * len(left)
         self.enemy1, self.enemy1_masks = self.cut_sub_surface(enemy_all, left, top, w, h, 3)
         
-        player_all = pygame.image.load('Jackson/images/sprites1.png').convert_alpha()
-        # walk animation - load them all just once before execution
-        left = [58,73,92,107,128,147,162,180,199,215,230,251]
-        top = [1] * len(left)
-        w = [14,18,14,20,17,14,17,18,15,14,20,17]
-        h = [47] * len(w)
+        player_all = pygame.image.load('Jackson/images/jackson_align-cutout.png').convert_alpha()
+        #attack
+        left = [1]
+        top = [20] 
+        w = [41] 
+        h = [60] 
+        self.player_atk, self.player_atk_masks = self.cut_sub_surface(player_all, left, top, w, h, 2)
+        self.player_atk_flip, self.player_atk_flip_masks = self.get_flipped(self.player_atk)        
+        
+        # walk animation - load them all just once before execution        
+        left = [1+i for i in range(0,200,35)]
+        top = [400] * len(left)        
+        w = [32] * len(left)
+        h = [60] * len(w)
         self.player_walk, self.player_walk_masks = self.cut_sub_surface(player_all, left, top, w, h, 2)
         self.player_walk_flip, self.player_walk_flip_masks = self.get_flipped(self.player_walk)
-          
-        #jump animation
-        left = [58,83,106]
-        top = [98] * len(left)
-        w = [22,22,20]
-        h = [45] * len(w)
+        
+        #jump animation        
+        left = [1+i for i in range(0,100,35)]
+        top = [480] * len(left)
+        w = [32] * len(left)
+        h = [60] * len(w)
         self.player_jump, self.player_jump_masks = self.cut_sub_surface(player_all, left, top, w, h, 2)
         self.player_jump_flip, self.player_jump_flip_masks = self.get_flipped(self.player_jump)
         
-        #stand animation
-        left = [19,86,106,124,141,163,181]
-        top = [334,154,151,152,152,153,144] 
-        w = [15,19,17,16,18,17,25]
-        h = [48,44,47,46,46,45,54] 
+        #stand animation        
+        left = [1+i for i in range(0,270,35)]
+        top = [560] * len(left)
+        w = [32] * len(left)
+        h = [60] * len(w)        
         self.player_stand, self.player_stand_masks = self.cut_sub_surface(player_all, left, top, w, h, 2)
         self.player_stand_flip, self.player_stand_flip_masks = self.get_flipped(self.player_stand)
-
-        #imagemRaio = pygame.image.load('raio.png')
-        #imagemRaio = pygame.transform.rotate(imagemRaio,90)
-        #imagemRaio = pygame.transform.scale(imagemRaio,(50,10))
-
+        
 
     def load_sounds(self):
          # configurando o som
-        self.somRaio = pygame.mixer.Sound('Jackson/sound/laser1.mp3')
-        self.somRaio.set_volume(0.2)
-        pygame.mixer.music.load('Jackson/sound/simplicity.ogg')
-        #pygame.mixer.music.play(-1, 0.0)
+        self.sound_fire = pygame.mixer.Sound('Jackson/sound/Uh.wav')
+        self.sound_fire.set_volume(0.1)
+        pygame.mixer.music.load('Jackson/sound/Smooth Criminal.wav')
+        pygame.mixer.music.play(-1, 0.0)
+        pygame.mixer.music.set_volume(0.4)
         self.somAtivado = True
+        self.nr_channels = pygame.mixer.get_num_channels()
+        self.channel = 1  # reserving channel 0 for prioritized sounds
     
     
+    def play_sound(self, sound, channel=None):
+        # plays a game sound on the next channel (all channels used in order).
+        # if channel not specified, sounds will be missed as sometimes all channels are busy 
+        # - rotates through channels.
+        if channel is None:
+            ch = pygame.mixer.Channel(self.channel)
+            self.channel += 1  # move to next channel
+            if self.channel == self.nr_channels:
+                self.channel = 1
+        else:
+            ch = pygame.mixer.Channel(channel)
+        ch.play(sound)
+        
+        
     def get_flipped(self, surfaces:list):
         list = []
         mask_list = []
@@ -99,15 +143,18 @@ class Settings:
             mask_list.append(mask)
         return list, mask_list
     
-    def cut_sub_surface(self, surface:pygame.Surface, left, top, w, h, scale):
+    
+    def cut_sub_surface(self, surface:pygame.Surface, left, top, w, h, scale, angle=0, full_screen=False):
         list = []
         mask_list = []
         if not (len(left) == len(top) == len(w) == len(h)):
             if self.debug: print('Subsurface empty list!!!')
-            return list
+            return list, mask_list      
         for i in range(len(left)):
-            surf = surface.subsurface((left[i],top[i]),(w[i],h[i]))
-            surf = pygame.transform.rotozoom(surf,0,scale)
+            surf = surface.subsurface((left[i],top[i]),(w[i],h[i]))            
+            surf = pygame.transform.rotozoom(surf,angle,scale)
+            if full_screen:
+                surf = pygame.transform.scale(surf,(WIDTH,HEIGHT))
             list.append(surf)
             mask = pygame.mask.from_surface(surf)
             mask_list.append(mask)

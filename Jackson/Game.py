@@ -9,29 +9,47 @@ class Jackson():
         settings.setup(debug)
         player = Player(WIDTH*0.1, HEIGHT*0.7)
 
+        # cenario creation - sprites
         boxes = pygame.sprite.Group()        
         box = Box(0, HEIGHT)
         boxes.add(box)
-        for i in range(6):            
+        for i in range(7):            
             box = Box(box.size[0]*i, HEIGHT)
             boxes.add(box)
+        
+        box = Box(0, HEIGHT-box.size[1]*2)
+        boxes.add(box)
+        box = Box(box.size[0]*6, HEIGHT-box.size[1])
+        boxes.add(box)
         
         enemies = pygame.sprite.Group()        
         enemies.add(Enemy1(WIDTH*0.5,HEIGHT-box.size[1]))
         
+        # main game loop
         while True:
             pygame.event.pump()
-            player.update(boxes, enemies)
 
             # Draw loop            
-            #settings.screen.blit(settings.imagemFundo, (0, 0))
-            settings.screen.fill(BACKGROUND)           
-            player.draw(settings.screen)
-            boxes.draw(settings.screen)
-            #enemies.draw(settings.screen)
-            for enemy in enemies:
-                enemy.draw(settings.screen)
+            settings.screen.fill(BACKGROUND) 
+            settings.screen.blit(settings.sky1[0], (0, 0))
             
+            # update elements in memory
+            player.update(boxes, enemies)
+            boxes.update()
+            enemies.update()
+                      
+            #draw elements           
+            if settings.debug:
+                for enemy in enemies:
+                    enemy.draw(settings.screen)
+                for box in boxes:
+                    box.draw(settings.screen)
+            else:
+                boxes.draw(settings.screen)
+                enemies.draw(settings.screen)            
+            player.draw(settings.screen)
+            
+            #update screen
             pygame.display.flip()
             settings.clock.tick(60)
             
