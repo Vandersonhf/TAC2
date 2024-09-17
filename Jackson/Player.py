@@ -47,7 +47,7 @@ class Player(Sprite):
 
         self.speed = 5
         self.jumpspeed = 14
-        self.vsp = 0
+        self.vsp = 0        # vertical speed
         self.gravity = 2.8
         self.min_jumpspeed = 3   
         self.walk_delay = 7
@@ -97,12 +97,15 @@ class Player(Sprite):
                 offset = (enemy.rect.x - self.rect.x, enemy.rect.y - self.rect.y)
                 collide = self.mask.overlap(enemy.mask, offset) 
                 if collide:
+                    #push player
                     if self.rect.collidepoint((enemy.rect.left, enemy.rect.centery)):                        
                         self.hsp = -int(self.jumpspeed)
                     else:
+                        #stomp
                         if self.rect.collidepoint((enemy.rect.centerx, enemy.rect.top)):                        
                             self.vsp = -int(self.jumpspeed-self.speed)
                             enemy.killed = True
+                            settings.play_sound(settings.sound_stomp)
                     
     
     def fire_enemy(self, enemies:pygame.sprite.Group):
@@ -169,6 +172,7 @@ class Player(Sprite):
         if key[pygame.K_UP] and self.onground:
             self.count_idle = 0
             self.vsp = -self.jumpspeed
+            settings.play_sound(settings.sound_jump)
 
         # variable height jumping
         if self.prev_key[pygame.K_UP] and not key[pygame.K_UP]:

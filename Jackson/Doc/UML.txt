@@ -1,0 +1,23 @@
+Ferramenta modelagem UML - Engenharia de software UML 
+Exemplos plantuml
+https://real-world-plantuml.com/
+
+exemplos UMlet
+https://www.itmeyer.at/umlet/uml2/
+
+
+ENGENHERIA REVERSA
+biblioteca pylint/pyreverse - gera diagrama de classes e pacotes a partir do código
+
+--sintaxe de uso
+pyreverse -o png <endereco_do_pacote>
+
+Ex. tem o arquivo __init__.py que significa pacote/módulo Python
+
+--Uso exemplo
+pyreverse -o png I:\Dropbox\FACET_2024_2\TAC2\visual\TAC2\Jackson
+
+--requisitos
+pip install pylint
+requer graphviz (terminal - winget install graphviz)
+adicione variável de ambiente PATH a pasta /bin do graphviz

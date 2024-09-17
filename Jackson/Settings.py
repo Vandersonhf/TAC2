@@ -111,9 +111,13 @@ class Settings:
          # configurando o som
         self.sound_fire = pygame.mixer.Sound('Jackson/sound/Uh.wav')
         self.sound_fire.set_volume(0.1)
+        self.sound_stomp = pygame.mixer.Sound('Jackson/sound/stomp.wav')
+        self.sound_stomp.set_volume(0.1)
+        self.sound_jump = pygame.mixer.Sound('Jackson/sound/jump.wav')
+        self.sound_jump.set_volume(0.1)
         pygame.mixer.music.load('Jackson/sound/Smooth Criminal.wav')
         pygame.mixer.music.play(-1, 0.0)
-        pygame.mixer.music.set_volume(0.4)
+        pygame.mixer.music.set_volume(0.3)
         self.somAtivado = True
         self.nr_channels = pygame.mixer.get_num_channels()
         self.channel = 1  # reserving channel 0 for prioritized sounds
