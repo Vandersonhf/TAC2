@@ -1,7 +1,7 @@
 import pygame
 
-WIDTH = 1920
-HEIGHT = 1080
+#WIDTH = 800
+#HEIGHT = 600
 BACKGROUND = (50, 100, 200)
 
 # Definindo as cores
@@ -15,20 +15,22 @@ CORTEXTO = (255, 255, 255) # cor do texto (branca)
 
 class Settings:
     '''Configure initial settings for Jackson'''
-    def setup(self, debug:bool):
+    def setup(self, debug:bool):        
         self.debug = debug
         pygame.init()
-        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        self.WIDTH, self.HEIGHT = pygame.display.get_desktop_sizes()[0]
+        self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         pygame.display.toggle_fullscreen()
         self.clock = pygame.time.Clock()
-
-        # Ocultando o cursor 
-        pygame.mouse.set_visible(False)
-        
+                
         # Configurando a fonte.
         self.fonte = pygame.font.Font(None, 48)
         
         #game globals        
+        self.fps = 60
+        self.tile = 32
+        self.map_lin = 100
+        self.map_col = 5000
         
         #load resources
         self.load_images()
@@ -44,6 +46,15 @@ class Settings:
         w = [657]
         h = [170] 
         self.sky1, self.sky1_mask = self.cut_sub_surface(clouds, left, top, w, h, 2, full_screen=True)
+        
+        #editor - cenario
+        full = pygame.image.load('Jackson/images/bg-1-1-cutout.png').convert_alpha()
+        left = [0]
+        top = [176]
+        w = [16]
+        h = [16] 
+        self.floor1, self.floor1_mask = self.cut_sub_surface(full, left, top, w, h, 2)
+        
         
         # boxes
         self.box = pygame.image.load('Jackson/images/box.jpg').convert_alpha()
@@ -116,9 +127,9 @@ class Settings:
         self.sound_jump = pygame.mixer.Sound('Jackson/sound/jump.wav')
         self.sound_jump.set_volume(0.1)
         pygame.mixer.music.load('Jackson/sound/Smooth Criminal.wav')
-        pygame.mixer.music.play(-1, 0.0)
+        #pygame.mixer.music.play(-1, 0.0)
         pygame.mixer.music.set_volume(0.3)
-        self.somAtivado = True
+        self.somAtivado = False
         self.nr_channels = pygame.mixer.get_num_channels()
         self.channel = 1  # reserving channel 0 for prioritized sounds
     
@@ -158,7 +169,7 @@ class Settings:
             surf = surface.subsurface((left[i],top[i]),(w[i],h[i]))            
             surf = pygame.transform.rotozoom(surf,angle,scale)
             if full_screen:
-                surf = pygame.transform.scale(surf,(WIDTH,HEIGHT))
+                surf = pygame.transform.scale(surf,(self.WIDTH,self.HEIGHT))
             list.append(surf)
             mask = pygame.mask.from_surface(surf)
             mask_list.append(mask)

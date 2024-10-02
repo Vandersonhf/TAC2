@@ -48,6 +48,7 @@ class Player(Sprite):
         self.speed = 5
         self.jumpspeed = 14
         self.vsp = 0        # vertical speed
+        self.hsp = 0
         self.gravity = 2.8
         self.min_jumpspeed = 3   
         self.walk_delay = 7
@@ -60,7 +61,7 @@ class Player(Sprite):
         self.fire = Fire()
                 
 
-    def update(self, boxes, enemies):
+    def update(self, boxes, enemies, cenario_rect:pygame.Rect, map_size):
         self.hsp = 0    # horizontal speed               
         self.onground = self.check_collision(0, 1, boxes, "UP")
         
@@ -72,8 +73,45 @@ class Player(Sprite):
         self.collide_enemy(enemies)
         self.fire_enemy(enemies) 
         
-        # movement 
-        self.move(self.hsp, self.vsp, boxes)      
+        # movement - player or cenario
+        self.move(self.hsp, self.vsp, boxes) 
+        #print(cenario_rect.right, ' ', map[1], ' ', map[1]/settings.tile)
+        right = cenario_rect.right <= map_size[1]
+        left = cenario_rect.left < 0
+        up = cenario_rect.top < 0
+        down = cenario_rect.bottom <= map_size[0]
+        if self.rect.right > settings.WIDTH*0.4 and right:
+            self.move(-self.hsp, 0, boxes) 
+            cenario_rect.move_ip([-self.hsp, 0])
+            for box in boxes:
+                box.rect.move_ip([-self.hsp, 0])
+        #print(cenario_rect.left, ' ', map[1], ' ', map[1]/settings.tile)
+        if self.rect.left < settings.WIDTH*0.1 and left:
+            self.move(-self.hsp, 0, boxes) 
+            cenario_rect.move_ip([-self.hsp, 0])
+            for box in boxes:
+                box.rect.move_ip([-self.hsp, 0])
+        if self.rect.bottom > settings.HEIGHT*0.9 and down:
+            self.move(0, -self.vsp, boxes) 
+            cenario_rect.move_ip([0, -self.vsp])
+            for box in boxes:
+                box.rect.move_ip([0, -self.vsp])
+        if self.rect.top < settings.HEIGHT*0.3 and up:
+            self.move(0, -self.vsp, boxes) 
+            cenario_rect.move_ip([0, -self.vsp])
+            for box in boxes:
+                box.rect.move_ip([0, -self.vsp])
+                
+        #all sides- dont go out of screen
+        right = self.rect.right > settings.WIDTH
+        left = self.rect.left < 0
+        up = self.rect.top < 0
+        down = self.rect.bottom > settings.HEIGHT
+        if right or left: 
+            self.rect.move_ip([-self.hsp, 0])
+        if up or down: 
+            self.rect.move_ip([0, -self.vsp])        
+        return cenario_rect       
             
        
     def check_gravity(self):
@@ -183,15 +221,15 @@ class Player(Sprite):
     
     def move(self, x, y, boxes):
         dx = x
-        dy = y     
-        while self.check_collision(dx, dy, boxes, "UP"):            
-            dy -= 1
-        while self.check_collision(dx, dy, boxes, "DOWN"):
-            dy += 1        
+        dy = y    
         while self.check_collision(dx, dy, boxes, "LEFT"):
             dx -= 1
         while self.check_collision(dx, dy, boxes, "RIGHT"):
             dx += 1
+        while self.check_collision(dx, dy, boxes, "UP"):            
+            dy -= 1
+        while self.check_collision(dx, dy, boxes, "DOWN"):
+            dy += 1
         self.rect.move_ip([dx, dy])
                         
     
@@ -199,7 +237,7 @@ class Player(Sprite):
         '''side="UP"|"DOWN"|"LEFT"|"RIGHT"'''
         collide = None
         rect = None        
-        self.rect.move_ip([x, y]) 
+        self.rect.move_ip([x, y])        
         #collide = pygame.sprite.spritecollideany(self, grounds)               
         for ground in grounds: 
             if self.rect.colliderect(ground):

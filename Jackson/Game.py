@@ -1,57 +1,86 @@
 import pygame
 from .Settings import *
 from .Player import Player
-from .Objects import Box
+from .Objects import Box, Floor1
 from .Enemy import Enemy1
+from .Editor import Editor
 
-class Jackson():    
+class Jackson():      
     def play(self, debug:bool):  
         settings.setup(debug)
-        player = Player(WIDTH*0.1, HEIGHT*0.7)
-
-        # cenario creation - sprites
-        boxes = pygame.sprite.Group()        
-        box = Box(0, HEIGHT)
-        boxes.add(box)
-        for i in range(7):            
-            box = Box(box.size[0]*i, HEIGHT)
-            boxes.add(box)
+        self.W = settings.WIDTH
+        self.H = settings.HEIGHT
+          
+        #menu
+        editor = Editor()
+        editor.run()
+                      
+        #sounds
+        pygame.mixer.music.play(-1, 0.0)
+        settings.somAtivado = True
         
-        box = Box(0, HEIGHT-box.size[1]*2)
-        boxes.add(box)
-        box = Box(box.size[0]*6, HEIGHT-box.size[1])
-        boxes.add(box)
+        # Ocultando o cursor 
+        pygame.mouse.set_visible(False)
         
-        enemies = pygame.sprite.Group()        
-        enemies.add(Enemy1(WIDTH*0.5,HEIGHT-box.size[1]))
+        self.player = Player(self.W*0.1, self.H*0.7)
+        self.ground = pygame.sprite.Group()         
+        
+        #cenario
+        h = settings.map_lin*settings.tile
+        w = settings.map_col*settings.tile
+        self.cenario = pygame.Surface((w, h))   #wrapper for whole map
+        self.cenario_rect = pygame.Rect(0, 0, w, h) 
+        
+        #load map and get boundary limits
+        self.map_size = self.open_map()
+                
+        self.enemies = pygame.sprite.Group()
         
         # main game loop
         while True:
             pygame.event.pump()
 
             # Draw loop            
-            settings.screen.fill(BACKGROUND) 
-            settings.screen.blit(settings.sky1[0], (0, 0))
-            
+            settings.screen.blit(self.cenario, self.cenario_rect)             
+                             
             # update elements in memory
-            player.update(boxes, enemies)
-            boxes.update()
-            enemies.update()
+            self.cenario_rect = self.player.update(self.ground, self.enemies,
+                                                   self.cenario_rect, self.map_size)
+            self.ground.update()            
+            #enemies.update()
                       
-            #draw elements           
-            if settings.debug:
-                for enemy in enemies:
-                    enemy.draw(settings.screen)
-                for box in boxes:
-                    box.draw(settings.screen)
-            else:
-                boxes.draw(settings.screen)
-                enemies.draw(settings.screen)            
-            player.draw(settings.screen)
-            
+            self.player.draw(settings.screen)
+                        
             #update screen
             pygame.display.flip()
-            settings.clock.tick(60)
+            settings.clock.tick(settings.fps)
+    
+        
+    def open_map(self):
+        self.cenario.fill(BACKGROUND)
+        max_x = 0   # get limits of the cenario
+        max_y = 0   # y = lin
+        try:
+            with open('Jackson/save.txt','r') as save_file:                           
+                gy = 0            
+                for line in save_file.readlines():                    
+                    gx = 0
+                    for type in line.split(','):                        
+                        if type.isdigit:
+                            if int(type) == 1:
+                                floor = Floor1(0,0)                                 
+                                t = settings.tile
+                                floor.rect = pygame.Rect(gx*t, gy*t, t, t) 
+                                self.ground.add(floor) 
+                                self.cenario.blit(floor.image, floor.rect.topleft)  
+                                if gx > max_x : max_x = gx
+                                if gy > max_y : max_y = gy                        
+                            gx += 1                              
+                    gy += 1                    
+                return (gy*settings.tile, gx*settings.tile)
+        except FileNotFoundError:
+            return None
+    
             
     def terminar(self):
         # Termina o programa.
@@ -69,10 +98,19 @@ class Jackson():
                         Jackson.terminar()
                     return
 
-    def colocarTexto(self, texto, fonte, janela, x, y):
-        # Coloca na posição (x,y) da janela o texto com a fonte passados por argumento.
-        objTexto = fonte.render(texto, True, CORTEXTO)
-        rectTexto = objTexto.get_rect()
-        rectTexto.topleft = (x, y)
-        janela.blit(objTexto, rectTexto)
+    def colocarTexto(self, texto, fonte, janela, x, y, delay=0, pos='topleft'):
+        if delay > 0:             
+            if self.text_count <= delay:
+                self.text_count += 1           
+                self.render_text(texto, fonte, janela, x, y, pos)     
+            else:
+                self.text_count = 0
+        else: self.render_text(texto, fonte, janela, x, y, pos)
+
     
+    def render_text(self, texto, fonte, janela, x, y, pos='topleft'):
+        objTexto = fonte.render(texto, True, CORTEXTO)
+        rectTexto:pygame.Rect = objTexto.get_rect()
+        if pos == 'topleft': rectTexto.topleft = (x, y)
+        if pos == 'center': rectTexto.center = (x, y)
+        janela.blit(objTexto, rectTexto)
