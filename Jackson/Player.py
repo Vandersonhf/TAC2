@@ -2,6 +2,7 @@ import pygame, numpy
 from .Sprite import Sprite
 from pygame.locals import *
 from .Game import settings
+from .Objects import Limits
 import sys
 
 class Player(Sprite):
@@ -44,6 +45,7 @@ class Player(Sprite):
         
         self.facing_left = False
         self.onground = False
+        self.limits = Limits()
 
         self.speed = 5
         self.jumpspeed = 14
@@ -53,7 +55,7 @@ class Player(Sprite):
         self.min_jumpspeed = 3   
         self.walk_delay = 7
         self.stand_delay = 15  
-        self.idle = 150
+        self.idle = 15
         self.count_idle = 0        
         self.prev_key = pygame.key.get_pressed()
         
@@ -73,35 +75,54 @@ class Player(Sprite):
         self.collide_enemy(enemies)
         self.fire_enemy(enemies) 
         
-        # movement - player or cenario
+        # movement - player 
         self.move(self.hsp, self.vsp, boxes) 
-        #print(cenario_rect.right, ' ', map[1], ' ', map[1]/settings.tile)
-        right = cenario_rect.right <= map_size[1]
-        left = cenario_rect.left < 0
-        up = cenario_rect.top < 0
-        down = cenario_rect.bottom <= map_size[0]
-        if self.rect.right > settings.WIDTH*0.4 and right:
-            self.move(-self.hsp, 0, boxes) 
-            cenario_rect.move_ip([-self.hsp, 0])
+        
+        #move cenario when off virtual camera limits - check right side
+        if self.rect.right > self.limits.rect_left.left and cenario_rect.right > settings.WIDTH: 
+            dx = self.rect.right - self.limits.rect_left.left
+            self.move(-dx, 0, boxes)             
+            cenario_rect.move_ip([-dx, 0])
+            if cenario_rect.right < settings.WIDTH:
+                cenario_rect.move_ip([dx, 0])
+                dx = cenario_rect.right - settings.WIDTH
+                cenario_rect.move_ip([-dx, 0])
             for box in boxes:
-                box.rect.move_ip([-self.hsp, 0])
-        #print(cenario_rect.left, ' ', map[1], ' ', map[1]/settings.tile)
-        if self.rect.left < settings.WIDTH*0.1 and left:
-            self.move(-self.hsp, 0, boxes) 
-            cenario_rect.move_ip([-self.hsp, 0])
+                box.rect.move_ip([-dx, 0])                
+        # check left side
+        if self.rect.left < self.limits.rect_right.right and cenario_rect.left < 0:
+            dx = self.rect.left - self.limits.rect_right.right
+            self.move(-dx, 0, boxes)             
+            cenario_rect.move_ip([-dx, 0])
+            if cenario_rect.left > 0:   # need to calc the diff between speed and move
+                cenario_rect.move_ip([dx, 0])
+                dx = cenario_rect.left
+                cenario_rect.move_ip([-dx, 0])
             for box in boxes:
-                box.rect.move_ip([-self.hsp, 0])
-        if self.rect.bottom > settings.HEIGHT*0.9 and down:
-            self.move(0, -self.vsp, boxes) 
-            cenario_rect.move_ip([0, -self.vsp])
+                box.rect.move_ip([-dx, 0])  
+        # check top side
+        if self.rect.top < self.limits.rect_down.bottom and cenario_rect.top < 0:            
+            dy = self.rect.top - self.limits.rect_down.bottom
+            self.move(0, -dy, boxes)            
+            cenario_rect.move_ip([0, -dy])
+            if cenario_rect.top > 0:
+                cenario_rect.move_ip([0, dy])
+                dy = cenario_rect.top
+                cenario_rect.move_ip([0, -dy])
             for box in boxes:
-                box.rect.move_ip([0, -self.vsp])
-        if self.rect.top < settings.HEIGHT*0.3 and up:
-            self.move(0, -self.vsp, boxes) 
-            cenario_rect.move_ip([0, -self.vsp])
+                box.rect.move_ip([0, -dy]) 
+        # check bottom side - virtual limit + can go down using map?
+        if (self.rect.bottom > self.limits.rect_up.top and cenario_rect.bottom > settings.HEIGHT):
+            dy = self.rect.bottom - self.limits.rect_up.top                       
+            self.move(0, -dy, boxes)
+            cenario_rect.move_ip([0, -dy])
+            if cenario_rect.bottom < settings.HEIGHT:   # overstep into cenario - fix
+                cenario_rect.move_ip([0, dy])                
+                dy = cenario_rect.bottom - settings.HEIGHT
+                cenario_rect.move_ip([0, -dy])
             for box in boxes:
-                box.rect.move_ip([0, -self.vsp])
-                
+                box.rect.move_ip([0, -dy])
+                        
         #all sides- dont go out of screen
         right = self.rect.right > settings.WIDTH
         left = self.rect.left < 0
@@ -176,11 +197,11 @@ class Player(Sprite):
             if self.onground:
                 self.walk_animation(self.walk_cycle, self.walk_cycle_masks,self.walk_delay)
             self.hsp = self.speed                       
-        else:                                     
+        elif self.vsp == 0 and self.hsp == 0:                                     
             #DANCE!!!
             self.count_idle += 1
             if self.count_idle > self.idle:
-                self.vsp = 0    # dont move on box edges               
+                #self.vsp = 0    # dont move on box edges               
                 if self.facing_left:
                     self.stand_animation(self.stand_cycle_flip, self.stand_cycle_flip_masks, self.stand_delay)                    
                 else:                    
@@ -231,25 +252,30 @@ class Player(Sprite):
         while self.check_collision(dx, dy, boxes, "DOWN"):
             dy += 1
         self.rect.move_ip([dx, dy])
+        return dx, dy
                         
     
     def check_collision(self, x, y, grounds, side=None):    
         '''side="UP"|"DOWN"|"LEFT"|"RIGHT"'''
         collide = None
         rect = None        
-        self.rect.move_ip([x, y])        
-        #collide = pygame.sprite.spritecollideany(self, grounds)               
-        for ground in grounds: 
-            if self.rect.colliderect(ground):
+        self.rect.move_ip([x, y])                       
+        for ground in grounds:
+            if self.limits == ground:
+                if side == "UP": rect = ground.rect_up     
+                if side == "DOWN": rect = ground.rect_down
+                if side == "LEFT": rect = ground.rect_left
+                if side == "RIGHT": rect = ground.rect_right
+                collide = self.rect.colliderect(rect) 
+                if collide: break    
+            elif self.rect.colliderect(ground):
                 if not side: rect = ground.rect
                 if side == "UP": rect = ground.rect_up     
                 if side == "DOWN": rect = ground.rect_down
                 if side == "LEFT": rect = ground.rect_left
                 if side == "RIGHT": rect = ground.rect_right           
                 collide = self.collide_mask_rect(self, rect)           
-                if collide: break               
-        #collide = pygame.sprite.spritecollide(self, grounds, False, pygame.sprite.collide_mask)
-        #pygame.sprite.collide_mask()
+                if collide: break 
         self.rect.move_ip([-x, -y])        
         return collide
     

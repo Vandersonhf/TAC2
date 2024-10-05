@@ -1,16 +1,14 @@
 import pygame
 from .Settings import *
 from .Player import Player
-from .Objects import Box, Floor1
+from .Objects import Box, Floor1, FixObj
 from .Enemy import Enemy1
 from .Editor import Editor
 
 class Jackson():      
     def play(self, debug:bool):  
         settings.setup(debug)
-        self.W = settings.WIDTH
-        self.H = settings.HEIGHT
-          
+                  
         #menu
         editor = Editor()
         editor.run()
@@ -21,8 +19,8 @@ class Jackson():
         
         # Ocultando o cursor 
         pygame.mouse.set_visible(False)
-        
-        self.player = Player(self.W*0.1, self.H*0.7)
+                
+        self.player = Player(settings.WIDTH*0.1, (settings.map_lin-3)*settings.tile)
         self.ground = pygame.sprite.Group()         
         
         #cenario
@@ -46,6 +44,7 @@ class Jackson():
             # update elements in memory
             self.cenario_rect = self.player.update(self.ground, self.enemies,
                                                    self.cenario_rect, self.map_size)
+            #pygame.draw.rect(settings.screen, BRANCO, self.cenario_rect, 20)   #debug
             self.ground.update()            
             #enemies.update()
                       
@@ -67,14 +66,15 @@ class Jackson():
                     gx = 0
                     for type in line.split(','):                        
                         if type.isdigit:
-                            if int(type) == 1:
-                                floor = Floor1(0,0)                                 
+                            type = int(type)
+                            if type > 0:
+                                floor = FixObj(settings.objects[type-1], settings.objects_mask[type-1])
                                 t = settings.tile
                                 floor.rect = pygame.Rect(gx*t, gy*t, t, t) 
                                 self.ground.add(floor) 
                                 self.cenario.blit(floor.image, floor.rect.topleft)  
                                 if gx > max_x : max_x = gx
-                                if gy > max_y : max_y = gy                        
+                                if gy > max_y : max_y = gy                                                   
                             gx += 1                              
                     gy += 1                    
                 return (gy*settings.tile, gx*settings.tile)

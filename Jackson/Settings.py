@@ -30,7 +30,7 @@ class Settings:
         self.fps = 60
         self.tile = 32
         self.map_lin = 100
-        self.map_col = 5000
+        self.map_col = 300
         
         #load resources
         self.load_images()
@@ -47,14 +47,20 @@ class Settings:
         h = [170] 
         self.sky1, self.sky1_mask = self.cut_sub_surface(clouds, left, top, w, h, 2, full_screen=True)
         
-        #editor - cenario
+        #editor - cenario - floor1
         full = pygame.image.load('Jackson/images/bg-1-1-cutout.png').convert_alpha()
         left = [0]
         top = [176]
         w = [16]
         h = [16] 
         self.floor1, self.floor1_mask = self.cut_sub_surface(full, left, top, w, h, 2)
-        
+        # floor,  block, pipe top left, pipe top right, pipe low left, pipe low right
+        left = [0,320,448,464,448,464]
+        top = [176,112,144,144,160,160]
+        w = [16] * len(left)
+        h = [16] * len(left)
+        self.objects, self.objects_mask = self.cut_sub_surface(full, left, top, w, h, 2)
+                
         
         # boxes
         self.box = pygame.image.load('Jackson/images/box.jpg').convert_alpha()

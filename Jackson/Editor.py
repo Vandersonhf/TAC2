@@ -11,13 +11,19 @@ class Editor():
         self.grid_start_x = int(self.W*0.05)
         self.grid_start_y = int(self.H*0.1)
         self.tile_size = settings.tile
-        self.grid_w = ((self.grid_max_x - self.grid_start_x) // self.tile_size) * self.tile_size     #ajustar mapa 
+        self.grid_w = ((self.grid_max_x - self.grid_start_x) // self.tile_size) * self.tile_size    
         self.grid_h = ((self.grid_max_y - self.grid_start_y) // self.tile_size) * self.tile_size
         self.map_lin = settings.map_lin
         self.map_col = settings.map_col
         
-        self.text_count = 0
-        self.setup_map_grid()        
+        self.text_count = 0     # count time on text appear
+        self.tile_pal = []      # tile pallete
+        self.setup_map_grid() 
+        self.select_lin = 0       # selected tile
+        self.select_col = 0          
+        #grid - map screen        
+        self.grid_anchor = [0,0]       # main fix point for scrolling        
+        self.update_grid()
         
         #buttons
         self.b1 = Button(self.grid_max_x+10,self.grid_max_y,150,50,"Save map")   
@@ -56,15 +62,11 @@ class Editor():
         for lin in range(self.map_lin):
             l = [] 
             for col in range(self.map_col):
-                tile = Tile(None, 0)
+                tile = Tile()
                 l.append(tile)
             matrix.append(l)      
         self.map = self.open_map(matrix)     # load map
-                
-        #grid - map screen
-        self.grid_anchor = [0,0]       # main fix point for scrolling        
-        self.update_grid()
-            
+                         
     
     def update_grid(self):
         self.grid = []
@@ -74,9 +76,14 @@ class Editor():
             pos_col = 0      
             for gx in range(self.grid_start_x,self.grid_w+1,self.tile_size):
                 rect = pygame.Rect(gx,gy,self.tile_size,self.tile_size)
-                type = self.map[pos_lin+self.grid_anchor[0]][pos_col+self.grid_anchor[1]].type  # from map to grid
+                type = self.map[pos_lin+self.grid_anchor[0]][pos_col+self.grid_anchor[1]].type 
+                surf = None
+                if type > 0:
+                    surf = settings.objects[type-1]
+                #if len(self.tile_pal) > 0:
+                #    surf = self.tile_pal[self.select_lin][self.select_col].surf
                 #print(pos_lin+grid_point[0], ' ', type)
-                tile = Tile(rect, type)
+                tile = Tile(surf, rect, type)
                 l.append(tile)
                 pos_col += 1
             self.grid.append(l) 
@@ -96,15 +103,68 @@ class Editor():
                 tile:Tile = self.grid[g_lin][g_col]
                 block:pygame.Rect = tile.rect
                 pygame.draw.rect(settings.screen, BRANCO, block,1)
-                if tile.type == 1:                        
-                    settings.screen.blit(settings.floor1[0], tile.rect.topleft)
-                    
+                if tile.surf:
+                #if tile.type == 1:
+                    settings.screen.blit(tile.surf, tile.rect.topleft)
+                #sel_tile = self.tile_pal[self.select_lin][self.select_col]
+                #settings.screen.blit(self.tile_pal[self.select_lin][self.select_col].surf, tile.rect.topleft)
+                #if tile.type == 1:                        
+                #    settings.screen.blit(settings.floor1[0], tile.rect.topleft)
+        self.draw_pallete()
+    
+    
+    def draw_pallete(self):   
+        #blit matrix
+        x = self.W*0.81     # initial position
+        y = self.H*0.3
+        t = self.tile_size
+        self.tile_pal = self.get_pallete(x,y,t)       
+        #print(len(self.tile_pal), ' ', self.tile_pal)
+        for lin in range(len(self.tile_pal)):
+            for col in range(len(self.tile_pal[0])):
+                pygame.draw.rect(settings.screen, BRANCO,(x-1,y-1,t+2,t+2),1)
+                settings.screen.blit(self.tile_pal[lin][col].surf, (x,y))
+                x += settings.tile + 3
+            y += settings.tile + 3
+
         # draw elements - pallette
         x = self.grid_max_x+10
         self.colocarTexto(f'SELECT:', settings.fonte, settings.screen, x, 10)
         x = int((self.W-self.grid_max_x)/2) + self.grid_max_x
-        pygame.draw.rect(settings.screen, BRANCO,(x-5,self.grid_start_y-5,self.tile_size+10,self.tile_size+10),5)
-        settings.screen.blit(settings.floor1[0], (x,self.grid_start_y))
+        pygame.draw.rect(settings.screen, BRANCO,(x-5,self.grid_start_y-5,
+                                                  self.tile_size+10,self.tile_size+10),5)
+        settings.screen.blit(self.tile_pal[self.select_lin][self.select_col].surf, (x,self.grid_start_y))
+                
+    
+    def get_pallete(self, x, y, t): 
+        #draw list of tiles - get tile per line
+        x_fit = int((self.W*0.99 - self.W*0.81) // settings.tile)
+        y_fit = int((self.H*0.8 - self.H*0.3) // settings.tile)
+        #print('matrix: ', x_fit, 'x', y_fit)
+        tile_pal = []
+        count_tile = 0
+        for _ in range(y_fit):
+            line = []
+            for __ in range(x_fit):
+                if count_tile < len(settings.objects):
+                    #print(count_tile ,' ', len(settings.objects))
+                    surf = settings.objects[count_tile]
+                    rect = pygame.Rect(x,y,t,t)
+                    tile = Tile(surf, rect, count_tile+1)
+                    #line.append(settings.objects[count_tile])
+                    line.append(tile)
+                    #tile_pal[lin][col] = settings.objects[count_tile]
+                    count_tile += 1
+                else: 
+                    tile_pal.append(line)
+                    return tile_pal
+                x += settings.tile + 3
+            y += settings.tile + 3
+            tile_pal.append(line)
+        return tile_pal
+                
+                
+        
     
     
     def handle_events(self):
@@ -128,6 +188,12 @@ class Editor():
                     exit()
                 if self.b3.button_rect.collidepoint(event.pos):
                     return 0
+                for lin in range(len(self.tile_pal)):
+                    for col in range(len(self.tile_pal[0])):
+                        if self.tile_pal[lin][col].rect.collidepoint(event.pos):
+                            #print(lin, ' ',col)
+                            self.select_lin = lin
+                            self.select_col = col
         # check map control    
         key = pygame.key.get_pressed()
         if (self.b_right.button_rect.collidepoint(pygame.mouse.get_pos()) and press3) or key[pygame.K_RIGHT]:            
@@ -187,11 +253,13 @@ class Editor():
                 tile:Tile = self.grid[g_lin][g_col]
                 block:pygame.Rect = tile.rect
                 if block.collidepoint(pygame.mouse.get_pos()):
-                    settings.screen.blit(settings.floor1[0], block.topleft)
-                    tile.set_type(1)
+                    sel_tile = self.tile_pal[self.select_lin][self.select_col]
+                    settings.screen.blit(sel_tile.surf, block.topleft)
+                    tile.set_type(sel_tile.type)
+                    tile.surf = sel_tile.surf
                     #update map                    
                     tile = self.map[g_lin+self.grid_anchor[0]][g_col+self.grid_anchor[1]]  # from map to grid
-                    tile.type = 1
+                    tile.type = sel_tile.type
                 
                      
     def editor_check_collision_erase (self):  
@@ -202,6 +270,7 @@ class Editor():
                 if block.collidepoint(pygame.mouse.get_pos()):
                     pygame.draw.rect(settings.screen, BACKGROUND,self.grid[g_lin][g_col])
                     tile.set_type(0)
+                    tile.surf = None
                     #update map                    
                     tile = self.map[g_lin+self.grid_anchor[0]][g_col+self.grid_anchor[1]]  # from map to grid
                     tile.type = 0
@@ -262,7 +331,8 @@ class Button():
                 
         
 class Tile():
-    def __init__(self, rect:pygame.Rect, type:int):        
+    def __init__(self, surf:pygame.Surface=None, rect:pygame.Rect=None, type:int=0):        
+        self.surf = surf
         self.type = type
         self.rect = rect
         
