@@ -2,7 +2,6 @@ import pygame, numpy
 from .Sprite import Sprite
 from pygame.locals import *
 from .Game import settings
-from .Objects import Limits
 import sys
 
 class Player(Sprite):
@@ -45,7 +44,11 @@ class Player(Sprite):
         
         self.facing_left = False
         self.onground = False
-        self.limits = Limits()
+        #limits of player movement - change camera
+        self.rect_up = pygame.Rect((0,settings.HEIGHT*0.9), (settings.WIDTH,1))
+        self.rect_down = pygame.Rect((0,settings.HEIGHT*0.3), (settings.WIDTH,1))
+        self.rect_left = pygame.Rect((settings.WIDTH*0.5,0), (1,settings.HEIGHT))
+        self.rect_right = pygame.Rect((settings.WIDTH*0.1,0), (1,settings.HEIGHT))
 
         self.speed = 5
         self.jumpspeed = 14
@@ -79,8 +82,8 @@ class Player(Sprite):
         self.move(self.hsp, self.vsp, boxes) 
         
         #move cenario when off virtual camera limits - check right side
-        if self.rect.right > self.limits.rect_left.left and cenario_rect.right > settings.WIDTH: 
-            dx = self.rect.right - self.limits.rect_left.left
+        if self.rect.right > self.rect_left.left and cenario_rect.right > settings.WIDTH: 
+            dx = self.rect.right - self.rect_left.left
             self.move(-dx, 0, boxes)             
             cenario_rect.move_ip([-dx, 0])
             if cenario_rect.right < settings.WIDTH:
@@ -90,8 +93,8 @@ class Player(Sprite):
             for box in boxes:
                 box.rect.move_ip([-dx, 0])                
         # check left side
-        if self.rect.left < self.limits.rect_right.right and cenario_rect.left < 0:
-            dx = self.rect.left - self.limits.rect_right.right
+        if self.rect.left < self.rect_right.right and cenario_rect.left < 0:
+            dx = self.rect.left - self.rect_right.right
             self.move(-dx, 0, boxes)             
             cenario_rect.move_ip([-dx, 0])
             if cenario_rect.left > 0:   # need to calc the diff between speed and move
@@ -101,8 +104,8 @@ class Player(Sprite):
             for box in boxes:
                 box.rect.move_ip([-dx, 0])  
         # check top side
-        if self.rect.top < self.limits.rect_down.bottom and cenario_rect.top < 0:            
-            dy = self.rect.top - self.limits.rect_down.bottom
+        if self.rect.top < self.rect_down.bottom and cenario_rect.top < 0:            
+            dy = self.rect.top - self.rect_down.bottom
             self.move(0, -dy, boxes)            
             cenario_rect.move_ip([0, -dy])
             if cenario_rect.top > 0:
@@ -112,8 +115,8 @@ class Player(Sprite):
             for box in boxes:
                 box.rect.move_ip([0, -dy]) 
         # check bottom side - virtual limit + can go down using map?
-        if (self.rect.bottom > self.limits.rect_up.top and cenario_rect.bottom > settings.HEIGHT):
-            dy = self.rect.bottom - self.limits.rect_up.top                       
+        if (self.rect.bottom > self.rect_up.top and cenario_rect.bottom > settings.HEIGHT):
+            dy = self.rect.bottom - self.rect_up.top                       
             self.move(0, -dy, boxes)
             cenario_rect.move_ip([0, -dy])
             if cenario_rect.bottom < settings.HEIGHT:   # overstep into cenario - fix
@@ -260,15 +263,8 @@ class Player(Sprite):
         collide = None
         rect = None        
         self.rect.move_ip([x, y])                       
-        for ground in grounds:
-            if self.limits == ground:
-                if side == "UP": rect = ground.rect_up     
-                if side == "DOWN": rect = ground.rect_down
-                if side == "LEFT": rect = ground.rect_left
-                if side == "RIGHT": rect = ground.rect_right
-                collide = self.rect.colliderect(rect) 
-                if collide: break    
-            elif self.rect.colliderect(ground):
+        for ground in grounds:              
+            if self.rect.colliderect(ground):
                 if not side: rect = ground.rect
                 if side == "UP": rect = ground.rect_up     
                 if side == "DOWN": rect = ground.rect_down

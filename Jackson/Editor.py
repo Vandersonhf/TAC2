@@ -16,6 +16,9 @@ class Editor():
         self.map_lin = settings.map_lin
         self.map_col = settings.map_col
         
+        self.tile_list = settings.objects + settings.back + settings.back2 + settings.items
+        self.total_size = len(self.tile_list)
+        
         self.text_count = 0     # count time on text appear
         self.tile_pal = []      # tile pallete
         self.setup_map_grid() 
@@ -77,12 +80,9 @@ class Editor():
             for gx in range(self.grid_start_x,self.grid_w+1,self.tile_size):
                 rect = pygame.Rect(gx,gy,self.tile_size,self.tile_size)
                 type = self.map[pos_lin+self.grid_anchor[0]][pos_col+self.grid_anchor[1]].type 
-                surf = None
+                surf = None                
                 if type > 0:
-                    surf = settings.objects[type-1]
-                #if len(self.tile_pal) > 0:
-                #    surf = self.tile_pal[self.select_lin][self.select_col].surf
-                #print(pos_lin+grid_point[0], ' ', type)
+                    surf = self.tile_list[type-1]               
                 tile = Tile(surf, rect, type)
                 l.append(tile)
                 pos_col += 1
@@ -104,12 +104,7 @@ class Editor():
                 block:pygame.Rect = tile.rect
                 pygame.draw.rect(settings.screen, BRANCO, block,1)
                 if tile.surf:
-                #if tile.type == 1:
-                    settings.screen.blit(tile.surf, tile.rect.topleft)
-                #sel_tile = self.tile_pal[self.select_lin][self.select_col]
-                #settings.screen.blit(self.tile_pal[self.select_lin][self.select_col].surf, tile.rect.topleft)
-                #if tile.type == 1:                        
-                #    settings.screen.blit(settings.floor1[0], tile.rect.topleft)
+                    settings.screen.blit(tile.surf, tile.rect.topleft)                
         self.draw_pallete()
     
     
@@ -118,55 +113,50 @@ class Editor():
         x = self.W*0.81     # initial position
         y = self.H*0.3
         t = self.tile_size
-        self.tile_pal = self.get_pallete(x,y,t)       
-        #print(len(self.tile_pal), ' ', self.tile_pal)
+        self.tile_pal = self.get_pallete(x,y,t)  
         for lin in range(len(self.tile_pal)):
-            for col in range(len(self.tile_pal[0])):
+            for col in range(len(self.tile_pal[lin])):
                 pygame.draw.rect(settings.screen, BRANCO,(x-1,y-1,t+2,t+2),1)
                 settings.screen.blit(self.tile_pal[lin][col].surf, (x,y))
                 x += settings.tile + 3
             y += settings.tile + 3
+            x = self.W*0.81
 
         # draw elements - pallette
         x = self.grid_max_x+10
         self.colocarTexto(f'SELECT:', settings.fonte, settings.screen, x, 10)
         x = int((self.W-self.grid_max_x)/2) + self.grid_max_x
         pygame.draw.rect(settings.screen, BRANCO,(x-5,self.grid_start_y-5,
-                                                  self.tile_size+10,self.tile_size+10),5)
+                                                  self.tile_size+10,self.tile_size+10),5)        
         settings.screen.blit(self.tile_pal[self.select_lin][self.select_col].surf, (x,self.grid_start_y))
                 
     
     def get_pallete(self, x, y, t): 
         #draw list of tiles - get tile per line
         x_fit = int((self.W*0.99 - self.W*0.81) // settings.tile)
-        y_fit = int((self.H*0.8 - self.H*0.3) // settings.tile)
-        #print('matrix: ', x_fit, 'x', y_fit)
+        y_fit = int((self.H*0.8 - self.H*0.3) // settings.tile)        
         tile_pal = []
-        count_tile = 0
+        count_tile = 0        
+        x_init = x        
         for _ in range(y_fit):
             line = []
             for __ in range(x_fit):
-                if count_tile < len(settings.objects):
-                    #print(count_tile ,' ', len(settings.objects))
-                    surf = settings.objects[count_tile]
+                if count_tile < self.total_size:  
+                    surf = self.tile_list[count_tile]
                     rect = pygame.Rect(x,y,t,t)
-                    tile = Tile(surf, rect, count_tile+1)
-                    #line.append(settings.objects[count_tile])
-                    line.append(tile)
-                    #tile_pal[lin][col] = settings.objects[count_tile]
+                    tile = Tile(surf, rect, count_tile+1)                    
+                    line.append(tile)                    
                     count_tile += 1
                 else: 
                     tile_pal.append(line)
                     return tile_pal
                 x += settings.tile + 3
             y += settings.tile + 3
+            x = x_init
             tile_pal.append(line)
         return tile_pal
                 
-                
         
-    
-    
     def handle_events(self):
         # pick up element fill cenario
         press3 = pygame.mouse.get_pressed()[0]
@@ -189,9 +179,8 @@ class Editor():
                 if self.b3.button_rect.collidepoint(event.pos):
                     return 0
                 for lin in range(len(self.tile_pal)):
-                    for col in range(len(self.tile_pal[0])):
+                    for col in range(len(self.tile_pal[lin])):
                         if self.tile_pal[lin][col].rect.collidepoint(event.pos):
-                            #print(lin, ' ',col)
                             self.select_lin = lin
                             self.select_col = col
         # check map control    

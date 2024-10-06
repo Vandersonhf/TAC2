@@ -38,34 +38,46 @@ class Settings:
      
     
     def load_images(self):
-        """loading surfaces for sprites"""                
-        # cenario - clouds
-        clouds = pygame.image.load('Jackson/images/bg-clouds-cutout.png').convert_alpha()
-        left = [20]
-        top = [288]
-        w = [657]
-        h = [170] 
-        self.sky1, self.sky1_mask = self.cut_sub_surface(clouds, left, top, w, h, 2, full_screen=True)
-        
-        #editor - cenario - floor1
+        """loading surfaces for sprites"""   
+        # objects to collide
         full = pygame.image.load('Jackson/images/bg-1-1-cutout.png').convert_alpha()
-        left = [0]
-        top = [176]
-        w = [16]
-        h = [16] 
-        self.floor1, self.floor1_mask = self.cut_sub_surface(full, left, top, w, h, 2)
-        # floor,  block, pipe top left, pipe top right, pipe low left, pipe low right
-        left = [0,320,448,464,448,464]
-        top = [176,112,144,144,160,160]
+        left = [0,320,768,832,448,464,448,464,2192,976,976,992,992,1008,1008]        
+        top = [176,112,416,368,144,144,160,160,112,384,400,384,400,384,400]
         w = [16] * len(left)
         h = [16] * len(left)
         self.objects, self.objects_mask = self.cut_sub_surface(full, left, top, w, h, 2)
+        
+        # objects that not collide - background
+        left = [136,152,136,152,456,456,664,680,696,256,272,1568,1584,272,288]        
+        top = [16,16,32,32,16,32,160,160,160,160,160,160,160,144,160]
+        w = [16] * len(left)
+        h = [16] * len(left)
+        self.back, self.back_mask = self.cut_sub_surface(full, left, top, w, h, 2)
+        
+        # objects that not collide - background2
+        back2 = pygame.image.load('Jackson/images/bg-trees-cutout.png').convert_alpha()
+        left = [208,208,208,208]        
+        top = [160,176,192,200]
+        w = [16] * len(left)
+        h = [16] * len(left)
+        self.back2, self.back2_mask = self.cut_sub_surface(back2, left, top, w, h, 2)
                 
-        
-        # boxes
-        self.box = pygame.image.load('Jackson/images/box.jpg').convert_alpha()
-        self.box_mask = pygame.mask.from_surface(self.box)
-        
+        # items
+        full_items = pygame.image.load('Jackson/images/items-objects.png').convert_alpha()
+        left = [0,0]
+        top = [64,81]
+        w = [16] * len(left)
+        h = [16] * len(left)
+        self.items, self.items_mask = self.cut_sub_surface(full_items, left, top, w, h, 2)
+                
+        # items2
+        full_blocks = pygame.image.load('Jackson/images/blocks.png').convert_alpha()
+        left = [80]
+        top = [112]
+        w = [16] * len(left)
+        h = [16] * len(left)
+        self.items2, self.items2_mask = self.cut_sub_surface(full_blocks, left, top, w, h, 2)
+                       
         # get light dance
         full = pygame.image.load('Jackson/images/full-cutout.png').convert_alpha()
         left = [1609]
@@ -125,7 +137,6 @@ class Settings:
         
 
     def load_sounds(self):
-         # configurando o som
         self.sound_fire = pygame.mixer.Sound('Jackson/sound/Uh.wav')
         self.sound_fire.set_volume(0.1)
         self.sound_stomp = pygame.mixer.Sound('Jackson/sound/stomp.wav')
