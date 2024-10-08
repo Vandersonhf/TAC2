@@ -28,7 +28,9 @@ class Settings:
         
         #game globals        
         self.fps = 60
-        self.tile = 32
+        self.base_tile = 16
+        self.factor_tile = 3    #change the scale as your will :)
+        self.tile = self.base_tile * self.factor_tile        
         self.map_lin = 100
         self.map_col = 300
         
@@ -43,40 +45,54 @@ class Settings:
         full = pygame.image.load('Jackson/images/bg-1-1-cutout.png').convert_alpha()
         left = [0,320,768,832,448,464,448,464,2192,976,976,992,992,1008,1008]        
         top = [176,112,416,368,144,144,160,160,112,384,400,384,400,384,400]
-        w = [16] * len(left)
-        h = [16] * len(left)
-        self.objects, self.objects_mask = self.cut_sub_surface(full, left, top, w, h, 2)
+        w = [self.base_tile] * len(left)
+        h = [self.base_tile] * len(left)
+        self.objects, self.objects_mask = self.cut_sub_surface(full, left, top, w, h, self.factor_tile)
         
         # objects that not collide - background
         left = [136,152,136,152,456,456,664,680,696,256,272,1568,1584,272,288]        
         top = [16,16,32,32,16,32,160,160,160,160,160,160,160,144,160]
-        w = [16] * len(left)
-        h = [16] * len(left)
-        self.back, self.back_mask = self.cut_sub_surface(full, left, top, w, h, 2)
+        w = [self.base_tile] * len(left)
+        h = [self.base_tile] * len(left)
+        self.back, self.back_mask = self.cut_sub_surface(full, left, top, w, h, self.factor_tile)
         
         # objects that not collide - background2
         back2 = pygame.image.load('Jackson/images/bg-trees-cutout.png').convert_alpha()
         left = [208,208,208,208]        
         top = [160,176,192,200]
-        w = [16] * len(left)
-        h = [16] * len(left)
-        self.back2, self.back2_mask = self.cut_sub_surface(back2, left, top, w, h, 2)
+        w = [self.base_tile] * len(left)
+        h = [self.base_tile] * len(left)
+        self.back2, self.back2_mask = self.cut_sub_surface(back2, left, top, w, h, self.factor_tile)
                 
         # items
         full_items = pygame.image.load('Jackson/images/items-objects.png').convert_alpha()
         left = [0,0]
         top = [64,81]
-        w = [16] * len(left)
-        h = [16] * len(left)
-        self.items, self.items_mask = self.cut_sub_surface(full_items, left, top, w, h, 2)
+        w = [self.base_tile] * len(left)
+        h = [self.base_tile] * len(left)
+        self.items, self.items_mask = self.cut_sub_surface(full_items, left, top, w, h, self.factor_tile)
                 
-        # items2
+        # items - coins        
+        left = [0,16,32,48]
+        top = [96,96,96,96]
+        w = [self.base_tile] * len(left)
+        h = [self.base_tile] * len(left)
+        self.coin, self.coin_mask = self.cut_sub_surface(full_items, left, top, w, h, self.factor_tile)
+        
+        # items - box ?        
+        left = [0,16,32,48]
+        top = [64,64,64,64]
+        w = [self.base_tile] * len(left)
+        h = [self.base_tile] * len(left)
+        self.box, self.box_mask = self.cut_sub_surface(full_items, left, top, w, h, self.factor_tile)
+        
+        # items - dead box
         full_blocks = pygame.image.load('Jackson/images/blocks.png').convert_alpha()
-        left = [80]
+        left = [128]
         top = [112]
-        w = [16] * len(left)
-        h = [16] * len(left)
-        self.items2, self.items2_mask = self.cut_sub_surface(full_blocks, left, top, w, h, 2)
+        w = [self.base_tile] * len(left)
+        h = [self.base_tile] * len(left)
+        self.box_empty, self.box_empty_mask = self.cut_sub_surface(full_blocks, left, top, w, h, self.factor_tile)
                        
         # get light dance
         full = pygame.image.load('Jackson/images/full-cutout.png').convert_alpha()
@@ -84,23 +100,39 @@ class Settings:
         top = [1704]
         w = [74]
         h = [223] 
-        self.dance, self.dance_mask = self.cut_sub_surface(full, left, top, w, h, 2)
+        self.dance, self.dance_mask = self.cut_sub_surface(full, left, top, w, h, self.factor_tile/2)
         
         #attack - fire
         left = [262,297,358]
         top = [1105] * len(left)
         w = [30,56,56]
         h = [32] * len(w) 
-        self.fire, self.fire_masks = self.cut_sub_surface(full, left, top, w, h, 2)
+        self.fire, self.fire_masks = self.cut_sub_surface(full, left, top, w, h, self.factor_tile/2)
         self.fire_flip, self.fire_flip_masks = self.get_flipped(self.fire)
         
-        #enemies
+        #enemies - pallete
         enemy_all = pygame.image.load('Jackson/images/mobs-cutout.png').convert_alpha()        
-        left = [238,257,219]
+        left = [238]
         top = [186] * len(left)
-        w = [16] * len(left)
-        h = [16] * len(left)
-        self.enemy1, self.enemy1_masks = self.cut_sub_surface(enemy_all, left, top, w, h, 3)
+        w = [self.base_tile] * len(left)
+        h = [self.base_tile] * len(left)
+        self.enemies, self.enemies_masks = self.cut_sub_surface(enemy_all, left, top, w, h, self.factor_tile)
+        
+        #enemies - 1
+        #enemy_all = pygame.image.load('Jackson/images/mobs-cutout.png').convert_alpha()        
+        left = [238,257]
+        top = [186] * len(left)
+        w = [self.base_tile] * len(left)
+        h = [self.base_tile] * len(left)
+        self.enemy1, self.enemy1_masks = self.cut_sub_surface(enemy_all, left, top, w, h, self.factor_tile)
+        
+        #enemy1 dead
+        left = [219]
+        top = [186] * len(left)
+        w = [self.base_tile] * len(left)
+        h = [self.base_tile] * len(left)
+        self.enemy1_dead, self.enemy1_dead_masks = self.cut_sub_surface(enemy_all, left, top, w, h, self.factor_tile)
+        
         
         player_all = pygame.image.load('Jackson/images/jackson_align-cutout.png').convert_alpha()
         #attack
@@ -108,7 +140,7 @@ class Settings:
         top = [20] 
         w = [41] 
         h = [60] 
-        self.player_atk, self.player_atk_masks = self.cut_sub_surface(player_all, left, top, w, h, 2)
+        self.player_atk, self.player_atk_masks = self.cut_sub_surface(player_all, left, top, w, h, self.factor_tile/2)
         self.player_atk_flip, self.player_atk_flip_masks = self.get_flipped(self.player_atk)        
         
         # walk animation - load them all just once before execution        
@@ -116,7 +148,7 @@ class Settings:
         top = [400] * len(left)        
         w = [32] * len(left)
         h = [60] * len(w)
-        self.player_walk, self.player_walk_masks = self.cut_sub_surface(player_all, left, top, w, h, 2)
+        self.player_walk, self.player_walk_masks = self.cut_sub_surface(player_all, left, top, w, h, self.factor_tile/2)
         self.player_walk_flip, self.player_walk_flip_masks = self.get_flipped(self.player_walk)
         
         #jump animation        
@@ -124,7 +156,7 @@ class Settings:
         top = [480] * len(left)
         w = [32] * len(left)
         h = [60] * len(w)
-        self.player_jump, self.player_jump_masks = self.cut_sub_surface(player_all, left, top, w, h, 2)
+        self.player_jump, self.player_jump_masks = self.cut_sub_surface(player_all, left, top, w, h, self.factor_tile/2)
         self.player_jump_flip, self.player_jump_flip_masks = self.get_flipped(self.player_jump)
         
         #stand animation        
@@ -132,7 +164,7 @@ class Settings:
         top = [560] * len(left)
         w = [32] * len(left)
         h = [60] * len(w)        
-        self.player_stand, self.player_stand_masks = self.cut_sub_surface(player_all, left, top, w, h, 2)
+        self.player_stand, self.player_stand_masks = self.cut_sub_surface(player_all, left, top, w, h, self.factor_tile/2)
         self.player_stand_flip, self.player_stand_flip_masks = self.get_flipped(self.player_stand)
         
 
@@ -143,6 +175,10 @@ class Settings:
         self.sound_stomp.set_volume(0.1)
         self.sound_jump = pygame.mixer.Sound('Jackson/sound/jump.wav')
         self.sound_jump.set_volume(0.1)
+        self.sound_coin = pygame.mixer.Sound('Jackson/sound/coin.wav')
+        self.sound_coin.set_volume(0.3)
+        self.sound_bump = pygame.mixer.Sound('Jackson/sound/bump.wav')
+        self.sound_bump.set_volume(0.3)
         pygame.mixer.music.load('Jackson/sound/Smooth Criminal.wav')
         #pygame.mixer.music.play(-1, 0.0)
         pygame.mixer.music.set_volume(0.3)

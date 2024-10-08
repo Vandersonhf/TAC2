@@ -2,7 +2,7 @@ from .Sprite import Sprite
 from .Game import settings
 
 class Enemy1(Sprite):
-    def __init__(self, startx, starty):
+    def __init__(self, startx=0, starty=0):
         super().__init__(settings.enemy1[0], settings.enemy1_masks[0], startx, starty)
         
         #walk       
@@ -33,10 +33,10 @@ class Enemy1(Sprite):
             #move
             self.rect.move_ip([-self.speed,0])
             
-            # animate
-            self.walk_animation_index,self.walk_count = self.animation(self.walk,
-                                                self.walk_masks, self.walk_delay,
-                                                self.walk_animation_index, self.walk_count)
+            # animate            
+            #self.walk_animation_index,self.walk_count = self.animation(self.walk,
+            #                                    self.walk_masks, self.walk_delay,
+            #                                    self.walk_animation_index, self.walk_count)
             
         
         # more to come... gravity, wall colision, etc.

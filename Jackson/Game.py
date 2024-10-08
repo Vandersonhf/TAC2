@@ -1,7 +1,7 @@
 import pygame
 from .Settings import *
 from .Player import Player
-from .Objects import FixObj
+from .Objects import FixObj, AniObj
 from .Enemy import Enemy1
 from .Editor import Editor
 
@@ -31,8 +31,8 @@ class Jackson():
                         
         self.background = pygame.sprite.Group()
         self.items = pygame.sprite.Group()
-        self.enemies = pygame.sprite.Group()
-        
+        self.enemies = pygame.sprite.Group()        
+                
         #load map and get boundary limits
         self.map_size = self.open_map()
         
@@ -40,20 +40,19 @@ class Jackson():
         while True:
             pygame.event.pump()
 
-            # Draw loop            
-            settings.screen.blit(self.cenario, self.cenario_rect)             
-                             
+            # Draw loop      
+            settings.screen.blit(self.cenario, self.cenario_rect)  
+            self.blit_text(f'SCORE:{self.player.score}', settings.fonte, settings.screen, 10, 10)           
+            #pygame.draw.rect(settings.screen, BRANCO, self.cenario_rect, 20)   #debug
+                
+            self.ground.update() 
+            #self.background.update()  
+            self.items.update(self.cenario_rect) 
+            self.enemies.update(self.cenario_rect)
             # update elements in memory
             self.cenario_rect = self.player.update(self.ground, self.enemies,
-                                                   self.cenario_rect, self.map_size)
-            #pygame.draw.rect(settings.screen, BRANCO, self.cenario_rect, 20)   #debug
-            self.ground.update() 
-            self.background.update()  
-            self.items.update()         
-            #enemies.update()
-                      
-            self.player.draw(settings.screen)
-                        
+                                                   self.cenario_rect, self.items)            
+                                    
             #update screen
             pygame.display.flip()
             settings.clock.tick(settings.fps)
@@ -64,7 +63,7 @@ class Jackson():
         max_x = 0   # get limits of the cenario
         max_y = 0   # y = lin
         t = settings.tile
-        tile_list = [settings.objects, settings.back, settings.back2, settings.items]
+        tile_list = [settings.objects, settings.back, settings.back2, settings.items, settings.enemies]
         map = self.get_tile_type_map(tile_list)
         try:
             with open('Jackson/save.txt','r') as save_file:                           
@@ -75,27 +74,51 @@ class Jackson():
                         if type.isdigit:
                             type = int(type)
                             if type > 0:
-                                for idx,val in enumerate(map):
-                                    if type <= val:
-                                        if idx == 0: item = type-1 
-                                        else: item = -(val-type-len(tile_list[idx])+1)                                        
-                                        obj = FixObj(tile_list[idx][item])
-                                        obj.rect = pygame.Rect(gx*t, gy*t, t, t)
-                                        if idx == 0:  self.ground.add(obj)
-                                        elif idx == 1 or idx == 2:
-                                            self.background.add(obj)
-                                        elif idx == 3: 
-                                            pass
-                                            self.items.add(obj)
-                                        self.cenario.blit(obj.image, obj.rect.topleft)  
-                                        if gx > max_x : max_x = gx
-                                        if gy > max_y : max_y = gy
-                                        break                                                                               
+                                max_x, max_y = self.create_tile(map, type, tile_list,
+                                                                gx, gy, max_x, max_y, t)                                                                                  
                         gx += 1                              
                     gy += 1                    
                 return (gy*settings.tile, gx*settings.tile)
         except FileNotFoundError:
             return None
+    
+    
+    def create_tile(self, map, type, tile_list, gx, gy, max_x, max_y, t):
+        obj = None        
+        for idx,val in enumerate(map):
+            if type <= val:                
+                if idx == 0: item = type-1 
+                else: item = -(val-type-len(tile_list[idx])+1) # hard one debug 
+                if idx == 0:  # first list of tiles
+                    obj = FixObj(tile_list[idx][item])
+                    obj.rect = pygame.Rect(gx*t, gy*t, t, t)
+                    self.ground.add(obj)
+                    self.cenario.blit(obj.image, obj.rect.topleft)
+                elif idx == 1 or idx == 2:
+                    obj = FixObj(tile_list[idx][item])
+                    obj.rect = pygame.Rect(gx*t, gy*t, t, t)
+                    self.background.add(obj)
+                    self.cenario.blit(obj.image, obj.rect.topleft)
+                elif idx == 3: 
+                    if item == 0:
+                        obj = AniObj(settings.box, settings.box_mask, idx, item, settings.box_empty)
+                        obj.rect = pygame.Rect(gx*t, gy*t, t, t)
+                        self.items.add(obj)
+                    if item == 1:
+                        obj = AniObj(settings.coin, settings.coin_mask, idx, item)
+                        obj.rect = pygame.Rect(gx*t, gy*t, t, t)
+                        self.items.add(obj)  
+                elif idx == 4: 
+                    if item == 0:
+                        obj = AniObj(settings.enemy1, settings.enemy1_masks, idx, item, settings.enemy1_dead)                        
+                        #obj.rect = pygame.Rect(gx*t + self.cenario_rect.left, gy*t + self.cenario_rect.left, t, t)
+                        obj.rect = pygame.Rect(gx*t, gy*t, t, t)
+                        self.enemies.add(obj)                      
+                if obj: 
+                    if gx > max_x : max_x = gx
+                    if gy > max_y : max_y = gy
+                break 
+        return max_x, max_y
     
     
     def get_tile_type_map(self,lists):
@@ -115,6 +138,7 @@ class Jackson():
         pygame.quit()
         exit()
         
+        
     def aguardarEntrada(self):
         # Aguarda entrada por teclado ou clique do mouse no “x” da janela.
         while True:
@@ -126,7 +150,8 @@ class Jackson():
                         Jackson.terminar()
                     return
 
-    def colocarTexto(self, texto, fonte, janela, x, y, delay=0, pos='topleft'):
+
+    def blit_text(self, texto, fonte, janela, x, y, delay=0, pos='topleft'):
         if delay > 0:             
             if self.text_count <= delay:
                 self.text_count += 1           

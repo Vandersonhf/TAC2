@@ -16,7 +16,7 @@ class Editor():
         self.map_lin = settings.map_lin
         self.map_col = settings.map_col
         
-        self.tile_list = settings.objects + settings.back + settings.back2 + settings.items
+        self.tile_list = settings.objects + settings.back + settings.back2 + settings.items + settings.enemies
         self.total_size = len(self.tile_list)
         
         self.text_count = 0     # count time on text appear
@@ -93,11 +93,11 @@ class Editor():
     def draw(self):
         # Draw loop  
         pygame.draw.line(settings.screen, BRANCO, (self.grid_max_x,0),(self.grid_max_x,self.H))
-        self.colocarTexto(f'SIZE:{self.map_lin}x{self.map_col} tiles', settings.fonte, settings.screen, 10, 10)
-        self.colocarTexto(f'RESOLUTION:{self.W}x{self.H}', settings.fonte, settings.screen, 400, 10)
-        self.colocarTexto(f'TILE:{settings.tile} px', settings.fonte, settings.screen, 10, 50)
-        self.colocarTexto(f'GRID:{len(self.grid)}x{len(self.grid[0])}', settings.fonte, settings.screen, 200, 50)  
-        self.colocarTexto(f'ANCHOR:{self.grid_anchor}', settings.fonte, settings.screen, 400, 50)
+        self.blit_text(f'SIZE:{self.map_lin}x{self.map_col} tiles', settings.fonte, settings.screen, 10, 10)
+        self.blit_text(f'RESOLUTION:{self.W}x{self.H}', settings.fonte, settings.screen, 400, 10)
+        self.blit_text(f'TILE:{settings.tile} px', settings.fonte, settings.screen, 10, 50)
+        self.blit_text(f'GRID:{len(self.grid)}x{len(self.grid[0])}', settings.fonte, settings.screen, 200, 50)  
+        self.blit_text(f'ANCHOR:{self.grid_anchor}', settings.fonte, settings.screen, 400, 50)
         for g_lin in range(len(self.grid)):                
             for g_col in range(len(self.grid[0])):
                 tile:Tile = self.grid[g_lin][g_col]
@@ -111,7 +111,7 @@ class Editor():
     def draw_pallete(self):   
         #blit matrix
         x = self.W*0.81     # initial position
-        y = self.H*0.3
+        y = self.H*0.2
         t = self.tile_size
         self.tile_pal = self.get_pallete(x,y,t)  
         for lin in range(len(self.tile_pal)):
@@ -124,7 +124,7 @@ class Editor():
 
         # draw elements - pallette
         x = self.grid_max_x+10
-        self.colocarTexto(f'SELECT:', settings.fonte, settings.screen, x, 10)
+        self.blit_text(f'SELECT:', settings.fonte, settings.screen, x, 10)
         x = int((self.W-self.grid_max_x)/2) + self.grid_max_x
         pygame.draw.rect(settings.screen, BRANCO,(x-5,self.grid_start_y-5,
                                                   self.tile_size+10,self.tile_size+10),5)        
@@ -134,7 +134,7 @@ class Editor():
     def get_pallete(self, x, y, t): 
         #draw list of tiles - get tile per line
         x_fit = int((self.W*0.99 - self.W*0.81) // settings.tile)
-        y_fit = int((self.H*0.8 - self.H*0.3) // settings.tile)        
+        y_fit = int((self.H*0.8 - self.H*0.2) // settings.tile)        
         tile_pal = []
         count_tile = 0        
         x_init = x        
@@ -202,7 +202,7 @@ class Editor():
                 self.grid_anchor[0] += 1        
                 self.update_grid()
         if self.text_count > 0:
-            self.colocarTexto(f'Map Saved!', settings.fonte, settings.screen, 
+            self.blit_text(f'Map Saved!', settings.fonte, settings.screen, 
                               self.grid_max_x+10, self.grid_max_y-50, 100)
         return 1
         
@@ -265,7 +265,7 @@ class Editor():
                     tile.type = 0
                     
     
-    def colocarTexto(self, texto, fonte, janela, x, y, delay=0, pos='topleft'):
+    def blit_text(self, texto, fonte, janela, x, y, delay=0, pos='topleft'):
         if delay > 0:             
             if self.text_count <= delay:
                 self.text_count += 1           

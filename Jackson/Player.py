@@ -51,36 +51,67 @@ class Player(Sprite):
         self.rect_right = pygame.Rect((settings.WIDTH*0.1,0), (1,settings.HEIGHT))
 
         self.speed = 5
-        self.jumpspeed = 14
+        self.jumpspeed = 12
         self.vsp = 0        # vertical speed
         self.hsp = 0
         self.gravity = 2.8
         self.min_jumpspeed = 3   
-        self.walk_delay = 7
+        self.walk_delay = 10
         self.stand_delay = 15  
-        self.idle = 15
+        self.idle = 20
         self.count_idle = 0        
         self.prev_key = pygame.key.get_pressed()
         
         # fire
         self.fire = Fire()
+        
+        #score
+        self.score = 0
                 
 
-    def update(self, boxes, enemies, cenario_rect:pygame.Rect, map_size):
+    def update(self, boxes, enemies, cenario_rect:pygame.Rect, items):
         self.hsp = 0    # horizontal speed               
         self.onground = self.check_collision(0, 1, boxes, "UP")
+        self.onceil = self.check_collision(0, -1, boxes, "DOWN")
         
-        #gravity
+        #gravity and keys
         self.check_gravity()        
-        self.check_keys(boxes)
+        self.check_keys()
         
-        #collide enemy
+        #collide enemy, items, etc
         self.collide_enemy(enemies)
         self.fire_enemy(enemies) 
+        box = self.collide_item(items)
+        if len(box) > 0: boxes.add(box)
         
         # movement - player 
-        self.move(self.hsp, self.vsp, boxes) 
-        
+        self.move(self.hsp, self.vsp, boxes)
+        cenario_rect = self.check_virtual_hard_limits(cenario_rect, boxes)
+        self.draw(settings.screen)
+        return cenario_rect
+    
+    
+    def collide_item(self, items):
+        box = []
+        for item in items:
+            if item.type == 0:
+                self.rect.move_ip([self.hsp, self.vsp])
+                if self.rect.colliderect(item.rect):
+                    box.append(item)               
+                if self.rect.collidepoint((item.rect.centerx, item.rect.bottom)):
+                    settings.sound_bump.play()
+                    item.image = item.depleted[0]
+                    item.dead = True  
+                self.rect.move_ip([-self.hsp, -self.vsp])                  
+            if item.type == 1:
+                if self.rect.colliderect(item.rect):
+                    settings.sound_coin.play()
+                    self.score += 1
+                    item.kill()
+        return box
+    
+    
+    def check_virtual_hard_limits(self, cenario_rect, boxes):    
         #move cenario when off virtual camera limits - check right side
         if self.rect.right > self.rect_left.left and cenario_rect.right > settings.WIDTH: 
             dx = self.rect.right - self.rect_left.left
@@ -151,6 +182,8 @@ class Player(Sprite):
                 self.walk_count = 0
         if self.onground and self.vsp > 0:
             self.vsp = 0
+        if self.onceil:
+            self.vsp = self.gravity
                          
     
     def collide_enemy(self, enemies:pygame.sprite.Group):
@@ -166,7 +199,7 @@ class Player(Sprite):
                         #stomp
                         if self.rect.collidepoint((enemy.rect.centerx, enemy.rect.top)):                        
                             self.vsp = -int(self.jumpspeed-self.speed)
-                            enemy.killed = True
+                            enemy.dead = True
                             settings.play_sound(settings.sound_stomp)
                     
     
@@ -179,7 +212,7 @@ class Player(Sprite):
                     enemy.kill()                      
 
 
-    def check_keys(self, grounds):
+    def check_keys(self):
         """check keys"""
         key = pygame.key.get_pressed()
         # if user clicks on cross button, close the game 
@@ -204,7 +237,7 @@ class Player(Sprite):
             #DANCE!!!
             self.count_idle += 1
             if self.count_idle > self.idle:
-                #self.vsp = 0    # dont move on box edges               
+                self.vsp = 0    # dont move on box edges               
                 if self.facing_left:
                     self.stand_animation(self.stand_cycle_flip, self.stand_cycle_flip_masks, self.stand_delay)                    
                 else:                    
@@ -264,8 +297,8 @@ class Player(Sprite):
         rect = None        
         self.rect.move_ip([x, y])                       
         for ground in grounds:              
-            if self.rect.colliderect(ground):
-                if not side: rect = ground.rect
+            if self.rect.colliderect(ground.rect):
+                #if not side: rect = ground.rect
                 if side == "UP": rect = ground.rect_up     
                 if side == "DOWN": rect = ground.rect_down
                 if side == "LEFT": rect = ground.rect_left
