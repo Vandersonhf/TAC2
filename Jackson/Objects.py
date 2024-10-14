@@ -37,10 +37,7 @@ class AniObj(Sprite):
         self.rect_init = None
         self.dead = False
         self.depleted = depleted    # final surface
-        #if self.idx == 4 and self.type == 0:
-        #    self.depleted = self.surfs.pop()
-        #    self.masks.pop()
-                        
+                                
         self.rect_up = pygame.Rect(self.rect.topleft, (self.rect.topright[0] - self.rect.topleft[0],1))
         self.rect_down = pygame.Rect(self.rect.bottomleft, (self.rect.bottomright[0] - self.rect.bottomleft[0],1))
         self.rect_left = pygame.Rect((self.rect.topleft[0], self.rect.topleft[1]),
@@ -58,13 +55,12 @@ class AniObj(Sprite):
         if cenario_rect:
             self.rect.left = self.rect_init.left + cenario_rect.left
             self.rect.top = self.rect_init.top + cenario_rect.top
-        if self.idx == 4 and self.type == 0:
-            self.rect.move_ip([-self.speed,0])
-        self.draw(settings.screen)
-            
+        
         # check which side hit
         self.rect_up = pygame.Rect(self.rect.topleft, (self.rect.topright[0] - self.rect.topleft[0],1))
         self.rect_down = pygame.Rect(self.rect.bottomleft, (self.rect.bottomright[0] - self.rect.bottomleft[0],1))
         self.rect_right = pygame.Rect(self.rect.topright, (1,self.rect.bottomright[1] - self.rect.topright[1]))
         self.rect_left = pygame.Rect((self.rect.topleft[0], self.rect.topleft[1]),
                                      (1,self.rect.bottomleft[1] - self.rect.topleft[1])) 
+        
+        self.draw(settings.screen)

@@ -110,8 +110,9 @@ class Jackson():
                         self.items.add(obj)  
                 elif idx == 4: 
                     if item == 0:
-                        obj = AniObj(settings.enemy1, settings.enemy1_masks, idx, item, settings.enemy1_dead)                        
+                        #obj = Enemy1(settings.enemy1, settings.enemy1_masks, idx, item, settings.enemy1_dead)                        
                         #obj.rect = pygame.Rect(gx*t + self.cenario_rect.left, gy*t + self.cenario_rect.left, t, t)
+                        obj = Enemy1()
                         obj.rect = pygame.Rect(gx*t, gy*t, t, t)
                         self.enemies.add(obj)                      
                 if obj: 

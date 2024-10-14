@@ -98,7 +98,7 @@ class Player(Sprite):
                 self.rect.move_ip([self.hsp, self.vsp])
                 if self.rect.colliderect(item.rect):
                     box.append(item)               
-                if self.rect.collidepoint((item.rect.centerx, item.rect.bottom)):
+                if self.rect.collidepoint((item.rect.centerx, item.rect.bottom)) and self.vsp < 0:
                     settings.sound_bump.play()
                     item.image = item.depleted[0]
                     item.dead = True  
@@ -199,7 +199,7 @@ class Player(Sprite):
                         #stomp
                         if self.rect.collidepoint((enemy.rect.centerx, enemy.rect.top)):                        
                             self.vsp = -int(self.jumpspeed-self.speed)
-                            enemy.dead = True
+                            enemy.killed = True
                             settings.play_sound(settings.sound_stomp)
                     
     
