@@ -54,7 +54,7 @@ class Player(Sprite):
         self.jumpspeed = 12
         self.vsp = 0        # vertical speed
         self.hsp = 0
-        self.gravity = 2.8
+        self.gravity = 3
         self.min_jumpspeed = 3   
         self.walk_delay = 10
         self.stand_delay = 15  
@@ -94,7 +94,23 @@ class Player(Sprite):
     def collide_item(self, items):
         box = []
         for item in items:
-            if item.type == 0:
+            if item.idx == 0 and item.type == 1:
+                if not item.dead:
+                    if not item.dead and self.rect.colliderect(item.rect_up):
+                        box.append(item)
+                    self.rect.move_ip([self.hsp, self.vsp])
+                    if self.rect.collidepoint((item.rect.centerx, item.rect.bottom)) and self.vsp < 0:
+                        settings.sound_break.play()
+                        item.image = item.depleted[0]
+                        item.dead = True
+                        item.dead_brick = True
+                        self.vsp = 0
+                        try: 
+                            box.index(item)
+                            box.remove(item)
+                        except ValueError: pass
+                    self.rect.move_ip([-self.hsp, -self.vsp])                     
+            if item.idx == 3 and item.type == 0:
                 self.rect.move_ip([self.hsp, self.vsp])
                 if self.rect.colliderect(item.rect):
                     box.append(item)               
@@ -103,7 +119,7 @@ class Player(Sprite):
                     item.image = item.depleted[0]
                     item.dead = True  
                 self.rect.move_ip([-self.hsp, -self.vsp])                  
-            if item.type == 1:
+            if item.idx == 3 and item.type == 1:
                 if self.rect.colliderect(item.rect):
                     settings.sound_coin.play()
                     self.score += 1

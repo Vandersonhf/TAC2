@@ -86,6 +86,13 @@ class Settings:
         h = [self.base_tile] * len(left)
         self.box, self.box_mask = self.cut_sub_surface(full_items, left, top, w, h, self.factor_tile)
         
+        # items - dead brick        
+        left = [64,64,64]
+        top = [0,16,32]
+        w = [self.base_tile] * len(left)
+        h = [self.base_tile] * len(left)
+        self.ex_brick, self.ex_brick_mask = self.cut_sub_surface(full_items, left, top, w, h, self.factor_tile)
+        
         # items - dead box
         full_blocks = pygame.image.load('Jackson/images/blocks.png').convert_alpha()
         left = [128]
@@ -177,6 +184,8 @@ class Settings:
         self.sound_jump.set_volume(0.1)
         self.sound_coin = pygame.mixer.Sound('Jackson/sound/coin.wav')
         self.sound_coin.set_volume(0.3)
+        self.sound_break = pygame.mixer.Sound('Jackson/sound/break.mp3')
+        self.sound_break.set_volume(0.5)
         self.sound_bump = pygame.mixer.Sound('Jackson/sound/bump.wav')
         self.sound_bump.set_volume(0.3)
         pygame.mixer.music.load('Jackson/sound/Smooth Criminal.wav')
@@ -213,6 +222,7 @@ class Settings:
     
     
     def cut_sub_surface(self, surface:pygame.Surface, left, top, w, h, scale, angle=0, full_screen=False):
+        """faz algo..."""
         list = []
         mask_list = []
         if not (len(left) == len(top) == len(w) == len(h)):

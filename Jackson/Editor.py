@@ -283,8 +283,7 @@ class Editor():
         janela.blit(objTexto, rectTexto)
      
      
-class Button():    
-    
+class Button(): 
     def __init__(self, x, y, w, h, text='', font=24, color=(0,0,0)):        
         self.w = w
         self.h = h

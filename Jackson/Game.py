@@ -90,28 +90,32 @@ class Jackson():
                 if idx == 0: item = type-1 
                 else: item = -(val-type-len(tile_list[idx])+1) # hard one debug 
                 if idx == 0:  # first list of tiles
-                    obj = FixObj(tile_list[idx][item])
-                    obj.rect = pygame.Rect(gx*t, gy*t, t, t)
-                    self.ground.add(obj)
-                    self.cenario.blit(obj.image, obj.rect.topleft)
+                    if item == 1:   #brick                        
+                        obj = AniObj([settings.objects[1]], [settings.objects_mask[1]],
+                                     idx, item, settings.ex_brick)
+                        obj.rect = pygame.Rect(gx*t, gy*t, t, t)
+                        self.items.add(obj)                        
+                    else:   #floor
+                        obj = FixObj(tile_list[idx][item])
+                        obj.rect = pygame.Rect(gx*t, gy*t, t, t)
+                        self.ground.add(obj)
+                        self.cenario.blit(obj.image, obj.rect.topleft)
                 elif idx == 1 or idx == 2:
                     obj = FixObj(tile_list[idx][item])
                     obj.rect = pygame.Rect(gx*t, gy*t, t, t)
                     self.background.add(obj)
                     self.cenario.blit(obj.image, obj.rect.topleft)
                 elif idx == 3: 
-                    if item == 0:
+                    if item == 0:   #box ?
                         obj = AniObj(settings.box, settings.box_mask, idx, item, settings.box_empty)
                         obj.rect = pygame.Rect(gx*t, gy*t, t, t)
                         self.items.add(obj)
-                    if item == 1:
+                    if item == 1:   #coin
                         obj = AniObj(settings.coin, settings.coin_mask, idx, item)
                         obj.rect = pygame.Rect(gx*t, gy*t, t, t)
                         self.items.add(obj)  
                 elif idx == 4: 
-                    if item == 0:
-                        #obj = Enemy1(settings.enemy1, settings.enemy1_masks, idx, item, settings.enemy1_dead)                        
-                        #obj.rect = pygame.Rect(gx*t + self.cenario_rect.left, gy*t + self.cenario_rect.left, t, t)
+                    if item == 0:   #mob 1
                         obj = Enemy1()
                         obj.rect = pygame.Rect(gx*t, gy*t, t, t)
                         self.enemies.add(obj)                      
