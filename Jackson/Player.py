@@ -96,10 +96,11 @@ class Player(Sprite):
         for item in items:
             if item.idx == 0 and item.type == 1:
                 if not item.dead:
-                    if not item.dead and self.rect.colliderect(item.rect_up):
+                    if self.rect.colliderect(item.rect):
                         box.append(item)
                     self.rect.move_ip([self.hsp, self.vsp])
-                    if self.rect.collidepoint((item.rect.centerx, item.rect.bottom)) and self.vsp < 0:
+                    if item.rect.collidepoint((self.rect.centerx, self.rect.top)) and self.vsp < 0:
+                    #if self.rect.collidepoint((item.rect.centerx, item.rect.bottom)) and self.vsp < 0:
                         settings.sound_break.play()
                         item.image = item.depleted[0]
                         item.dead = True
@@ -236,7 +237,15 @@ class Player(Sprite):
             if event.type == QUIT or (event.type == KEYDOWN and
                                         event.key == K_ESCAPE): 
                 pygame.quit() 
-                sys.exit()         
+                sys.exit()    
+            if (event.type == KEYDOWN and event.key == K_m):
+                if settings.somAtivado: 
+                    pygame.mixer.music.stop()
+                    settings.somAtivado = False
+                else: 
+                    pygame.mixer.music.play(-1, 0.0)
+                    pygame.mixer.music.set_volume(0.2)
+                    settings.somAtivado = True                
         if key[pygame.K_LEFT]:
             self.facing_left = True
             self.count_idle = 0

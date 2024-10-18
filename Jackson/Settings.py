@@ -19,12 +19,15 @@ class Settings:
         self.debug = debug
         pygame.init()
         self.WIDTH, self.HEIGHT = pygame.display.get_desktop_sizes()[0]
-        self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
+        self.disp_size = (self.WIDTH, self.HEIGHT)
+        self.screen = pygame.display.set_mode(self.disp_size)
         pygame.display.toggle_fullscreen()
         self.clock = pygame.time.Clock()
                 
-        # Configurando a fonte.
-        self.fonte = pygame.font.Font(None, 48)
+        # Configurando a fonte.        
+        self.font_size = 48 
+        self.fonte = pygame.font.Font(None, self.font_size)
+
         
         #game globals        
         self.fps = 60
@@ -33,6 +36,10 @@ class Settings:
         self.tile = self.base_tile * self.factor_tile        
         self.map_lin = 100
         self.map_col = 300
+        
+        # moving background
+        self.scroll = 0
+        self.tiles = 2
         
         #load resources
         self.load_images()
@@ -48,6 +55,10 @@ class Settings:
         w = [self.base_tile] * len(left)
         h = [self.base_tile] * len(left)
         self.objects, self.objects_mask = self.cut_sub_surface(full, left, top, w, h, self.factor_tile)
+        
+        #background        
+        self.background = pygame.image.load('Jackson/images/back.jpg').convert_alpha()
+        self.background = pygame.transform.scale(self.background,(self.WIDTH,self.HEIGHT))
         
         # objects that not collide - background
         left = [136,152,136,152,456,456,664,680,696,256,272,1568,1584,272,288]        
@@ -188,9 +199,9 @@ class Settings:
         self.sound_break.set_volume(0.5)
         self.sound_bump = pygame.mixer.Sound('Jackson/sound/bump.wav')
         self.sound_bump.set_volume(0.3)
-        pygame.mixer.music.load('Jackson/sound/Smooth Criminal.wav')
+        #pygame.mixer.music.load('Jackson/sound/Smooth Criminal.wav')
         #pygame.mixer.music.play(-1, 0.0)
-        pygame.mixer.music.set_volume(0.3)
+        pygame.mixer.music.set_volume(0.2)
         self.somAtivado = False
         self.nr_channels = pygame.mixer.get_num_channels()
         self.channel = 1  # reserving channel 0 for prioritized sounds
