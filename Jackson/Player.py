@@ -67,6 +67,10 @@ class Player(Sprite):
         
         #score
         self.score = 0
+        self.life = 100
+        self.hit = False
+        self.hit_counter = 0
+        self.hit_delay = 100
                 
 
     def update(self, boxes, enemies, cenario_rect:pygame.Rect, items):
@@ -79,13 +83,16 @@ class Player(Sprite):
         self.check_keys()
         
         #collide enemy, items, etc
-        self.collide_enemy(enemies)
+        dead = self.collide_enemy(enemies)
+        if dead: 
+            self.draw(settings.screen)
+            return False
         self.fire_enemy(enemies) 
         box = self.collide_item(items)
         if len(box) > 0: boxes.add(box)
         
         # movement - player 
-        self.move(self.hsp, self.vsp, boxes)
+        self.adjust_move(self.hsp, self.vsp, boxes)
         cenario_rect = self.check_virtual_hard_limits(cenario_rect, boxes)
         self.draw(settings.screen)
         return cenario_rect
@@ -94,6 +101,7 @@ class Player(Sprite):
     def collide_item(self, items):
         box = []
         for item in items:
+            # BRICK
             if item.idx == 0 and item.type == 1:
                 if not item.dead:
                     if self.rect.colliderect(item.rect):
@@ -110,16 +118,23 @@ class Player(Sprite):
                             box.index(item)
                             box.remove(item)
                         except ValueError: pass
-                    self.rect.move_ip([-self.hsp, -self.vsp])                     
+                    self.rect.move_ip([-self.hsp, -self.vsp])
+            # BOX                     
             if item.idx == 3 and item.type == 0:
                 self.rect.move_ip([self.hsp, self.vsp])
                 if self.rect.colliderect(item.rect):
-                    box.append(item)               
-                if self.rect.collidepoint((item.rect.centerx, item.rect.bottom)) and self.vsp < 0:
-                    settings.sound_bump.play()
-                    item.image = item.depleted[0]
-                    item.dead = True  
+                    box.append(item)   
+                if not item.dead:            
+                    if self.rect.collidepoint((item.rect.centerx, item.rect.bottom)) and self.vsp < 0:
+                        settings.sound_bump.play()
+                        item.image = item.depleted[0]
+                        item.dead = True  
+                        # appear prize - coin
+                        settings.sound_coin.play()
+                        self.score += 1
+                        item.dead_box = True
                 self.rect.move_ip([-self.hsp, -self.vsp])                  
+            # COIN
             if item.idx == 3 and item.type == 1:
                 if self.rect.colliderect(item.rect):
                     settings.sound_coin.play()
@@ -132,7 +147,7 @@ class Player(Sprite):
         #move cenario when off virtual camera limits - check right side
         if self.rect.right > self.rect_left.left and cenario_rect.right > settings.WIDTH: 
             dx = self.rect.right - self.rect_left.left
-            self.move(-dx, 0, boxes)             
+            self.adjust_move(-dx, 0, boxes)             
             cenario_rect.move_ip([-dx, 0])
             if cenario_rect.right < settings.WIDTH:
                 cenario_rect.move_ip([dx, 0])
@@ -143,7 +158,7 @@ class Player(Sprite):
         # check left side
         if self.rect.left < self.rect_right.right and cenario_rect.left < 0:
             dx = self.rect.left - self.rect_right.right
-            self.move(-dx, 0, boxes)             
+            self.adjust_move(-dx, 0, boxes)             
             cenario_rect.move_ip([-dx, 0])
             if cenario_rect.left > 0:   # need to calc the diff between speed and move
                 cenario_rect.move_ip([dx, 0])
@@ -154,7 +169,7 @@ class Player(Sprite):
         # check top side
         if self.rect.top < self.rect_down.bottom and cenario_rect.top < 0:            
             dy = self.rect.top - self.rect_down.bottom
-            self.move(0, -dy, boxes)            
+            self.adjust_move(0, -dy, boxes)            
             cenario_rect.move_ip([0, -dy])
             if cenario_rect.top > 0:
                 cenario_rect.move_ip([0, dy])
@@ -165,7 +180,7 @@ class Player(Sprite):
         # check bottom side - virtual limit + can go down using map?
         if (self.rect.bottom > self.rect_up.top and cenario_rect.bottom > settings.HEIGHT):
             dy = self.rect.bottom - self.rect_up.top                       
-            self.move(0, -dy, boxes)
+            self.adjust_move(0, -dy, boxes)
             cenario_rect.move_ip([0, -dy])
             if cenario_rect.bottom < settings.HEIGHT:   # overstep into cenario - fix
                 cenario_rect.move_ip([0, dy])                
@@ -204,29 +219,52 @@ class Player(Sprite):
                          
     
     def collide_enemy(self, enemies:pygame.sprite.Group):
-        for enemy in enemies:
-            if self.rect.colliderect(enemy.rect):
-                offset = (enemy.rect.x - self.rect.x, enemy.rect.y - self.rect.y)
-                collide = self.mask.overlap(enemy.mask, offset) 
-                if collide:
-                    #push player
-                    if self.rect.collidepoint((enemy.rect.left, enemy.rect.centery)):                        
-                        self.hsp = -int(self.jumpspeed)
-                    else:
-                        #stomp
-                        if self.rect.collidepoint((enemy.rect.centerx, enemy.rect.top)):                        
-                            self.vsp = -int(self.jumpspeed-self.speed)
-                            enemy.killed = True
-                            settings.play_sound(settings.sound_stomp)
+        # hit animation
+        if self.hit:
+            self.hit_counter += 1
+            if self.hit_counter < self.hit_delay//2: self.image = settings.dead[1]
+            else: self.image = settings.dead[2]
+            self.rect = self.image.get_rect(center=self.rect.center)
+            if self.hit_counter > self.hit_delay:
+                self.hit = False
+        else:   # check enemy collision   
+            for enemy in enemies:
+                if self.rect.colliderect(enemy.rect):
+                    offset = (enemy.rect.x - self.rect.x, enemy.rect.y - self.rect.y)
+                    collide = self.mask.overlap(enemy.mask, offset) 
+                    if collide and not self.hit:
+                        #hit player                        
+                        if self.rect.collidepoint((enemy.rect.left, enemy.rect.centery)) or \
+                            self.rect.collidepoint((enemy.rect.right, enemy.rect.centery)):                        
+                            #self.hsp = -int(self.jumpspeed)    # kick
+                            self.life -= 20 
+                            if self.life <=0:
+                                self.life = 0
+                                self.image = settings.dead[0]
+                                self.rect = self.image.get_rect(midbottom=self.rect.midbottom)
+                                settings.sound_dead.play()
+                                return True
+                            else:
+                                settings.sound_hit.play()                                
+                                self.hit = True
+                                self.hit_counter = 0
+                        else:
+                            #stomp kill
+                            if not self.hit:
+                                if self.rect.collidepoint((enemy.rect.centerx, enemy.rect.top)):                        
+                                    self.vsp = -int(self.jumpspeed-self.speed)
+                                    enemy.killed = True
+                                    settings.play_sound(settings.sound_stomp)
                     
     
     def fire_enemy(self, enemies:pygame.sprite.Group):
         for enemy in enemies:
-            if self.fire.rect.colliderect(enemy.rect):
-                offset = (enemy.rect.x - self.fire.rect.x, enemy.rect.y - self.fire.rect.y)
-                collide = self.fire.mask.overlap(enemy.mask, offset) 
-                if collide:
-                    enemy.kill()                      
+            if self.fire.active:
+                if self.fire.rect.colliderect(enemy.rect):
+                    offset = (enemy.rect.x - self.fire.rect.x, enemy.rect.y - self.fire.rect.y)
+                    collide = self.fire.mask.overlap(enemy.mask, offset) 
+                    if collide:
+                        enemy.kill()                      
 
 
     def check_keys(self):
@@ -270,7 +308,8 @@ class Player(Sprite):
         
         # fire
         if key[pygame.K_SPACE] and self.onground and self.hsp == 0:            
-            self.count_idle = 0           
+            self.count_idle = 0     
+            self.fire.on()      
             if not self.facing_left:
                 self.image = self.atk_cycle[0]
                 self.rect = self.image.get_rect(center=self.rect.center)
@@ -287,6 +326,7 @@ class Player(Sprite):
                 y = self.rect.centery
                 self.fire.set(x,y)        
                 self.fire.fire_animation(flip=True)
+        else: self.fire.off()
                      
         #jump
         if key[pygame.K_UP] and self.onground:
@@ -301,7 +341,7 @@ class Player(Sprite):
         self.prev_key = key
 
     
-    def move(self, x, y, boxes):
+    def adjust_move(self, x, y, boxes):
         dx = x
         dy = y    
         while self.check_collision(dx, dy, boxes, "LEFT"):
@@ -379,6 +419,7 @@ class Player(Sprite):
                 
         if speed > 0: index = 2
         else: index = 0
+        #if abs(speed) < self.gravity*2: index = 1
         
         # change img and mask after delay        
         self.image = images[index]           
@@ -403,12 +444,19 @@ class Fire(Sprite):
         self.fire_count = 0  
         self.fire_delay = 20
         self.fire_sound_counter = 0 
+        self.active = False
                     
     
     def set(self, x, y):
-        self.rect.center = [x, y]  
+        #self.rect.center = [x, y]  
+        self.rect = self.image.get_rect(center=(x,y))
         
-    
+    def on(self):
+        self.active = True
+        
+    def off(self):
+        self.active = False
+            
     def fire_animation(self, flip=False):
         '''Enter with surface list and its masks
         plus max delay to change surface

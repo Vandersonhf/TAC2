@@ -12,6 +12,8 @@ VERMELHO = (255, 0, 0)
 VERDE = (0, 255, 0)
 AZUL = (0, 0, 255)
 CORTEXTO = (255, 255, 255) # cor do texto (branca)
+CORTEXTO2 = (255, 150, 50) # cor do texto (laranja)
+CORTEXTO3 = (255, 0, 0) # cor do texto (vermelho)
 
 class Settings:
     '''Configure initial settings for Jackson'''
@@ -27,7 +29,6 @@ class Settings:
         # Configurando a fonte.        
         self.font_size = 48 
         self.fonte = pygame.font.Font(None, self.font_size)
-
         
         #game globals        
         self.fps = 60
@@ -120,6 +121,13 @@ class Settings:
         h = [223] 
         self.dance, self.dance_mask = self.cut_sub_surface(full, left, top, w, h, self.factor_tile/2)
         
+        # dead jackson and hit
+        left = [419,152,298]
+        top = [799,792,792]
+        w = [61,33,33]
+        h = [43,48,48] 
+        self.dead, self.dead_mask = self.cut_sub_surface(full, left, top, w, h, self.factor_tile/2)
+        
         #attack - fire
         left = [262,297,358]
         top = [1105] * len(left)
@@ -199,6 +207,10 @@ class Settings:
         self.sound_break.set_volume(0.5)
         self.sound_bump = pygame.mixer.Sound('Jackson/sound/bump.wav')
         self.sound_bump.set_volume(0.3)
+        self.sound_hit = pygame.mixer.Sound('Jackson/sound/Ooh.wav')
+        self.sound_hit.set_volume(0.3)
+        self.sound_dead = pygame.mixer.Sound('Jackson/sound/Wow.wav')
+        self.sound_dead.set_volume(0.3)
         #pygame.mixer.music.load('Jackson/sound/Smooth Criminal.wav')
         #pygame.mixer.music.play(-1, 0.0)
         pygame.mixer.music.set_volume(0.2)

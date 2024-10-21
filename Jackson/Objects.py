@@ -37,6 +37,7 @@ class AniObj(Sprite):
         self.rect_init = None
         self.dead = False        
         self.dead_brick = False
+        self.dead_box = False
         self.depleted = depleted    # final surfaces
         self.pos = None
                                
@@ -67,9 +68,21 @@ class AniObj(Sprite):
             self.index, self.counter = self.animation(self.surfs, self.masks, self.delay,
                                                   self.index, self.counter)
         elif self.dead_brick: self.pos = self.dead_bricks_animation(self.pos)
+        elif self.dead_box: self.dead_box_animation()
         
         if not self.dead_brick:            
             self.draw(settings.screen)
+        
+    
+    def dead_box_animation(self): 
+        self.counter += 1
+        if self.counter < self.delay*3:
+            l = self.rect.left
+            t = self.rect.top-(settings.base_tile*settings.factor_tile)
+            w = self.rect.width
+            h = self.rect.height
+            rect = pygame.Rect(l,t,w,h)
+            settings.screen.blit(settings.coin[1], rect)
         
     
     def dead_bricks_animation(self, pos):        

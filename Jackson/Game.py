@@ -59,7 +59,9 @@ class Jackson():
             
             # Parando o jogo e mostrando a tela final.
             #if self.boss != None and self.boss.dead: self.__menu_win__()        
-            #else: self.__menu_last__()
+            #else: 
+            
+            self.__menu_last__()
     
             
     def main_loop(self):
@@ -68,21 +70,33 @@ class Jackson():
             pygame.event.pump()
 
             # Draw loop      
-            settings.screen.blit(self.cenario, self.cenario_rect)  
-            self.blit_text(f'SCORE:{self.player.score}', settings.fonte, settings.screen, 10, 10)           
-            #pygame.draw.rect(settings.screen, BRANCO, self.cenario_rect, 20)   #debug
-                
+            settings.screen.blit(self.cenario, self.cenario_rect) 
+                            
             self.ground.update() 
             #self.background.update()  
             self.items.update(self.cenario_rect) 
-            self.enemies.update(self.cenario_rect)
+            solid = pygame.sprite.Group()
+            solid.add(self.ground)
+            solid.add(self.items)
+            self.enemies.update(solid, self.cenario_rect)
             # update elements in memory
             self.cenario_rect = self.player.update(self.ground, self.enemies,
-                                                   self.cenario_rect, self.items)            
-                                    
+                                                   self.cenario_rect, self.items) 
+            
+            # blit panel
+            settings.screen.blit(settings.coin[1], pygame.Rect(0,0,settings.base_tile,settings.base_tile))
+            self.blit_text(f'x : {self.player.score}', settings.fonte, settings.screen, 50, 10)             
+            cor = CORTEXTO
+            if self.player.life >30 and self.player.life < 70: cor = CORTEXTO2
+            if self.player.life <= 30: cor = CORTEXTO3
+            self.blit_text(f'LIFE:{self.player.life}', settings.fonte, 
+                           settings.screen, settings.WIDTH-200, 10, cor=cor)
+            #pygame.draw.rect(settings.screen, BRANCO, self.cenario_rect, 20)   #debug
+                                  
             #update screen
             pygame.display.flip()
-            settings.clock.tick(settings.fps)
+            settings.clock.tick(settings.fps)            
+            if not self.cenario_rect: return 
     
         
     def open_map(self):
@@ -171,18 +185,18 @@ class Jackson():
         exit()
           
 
-    def blit_text(self, texto, fonte, janela, x, y, delay=0, pos='topleft'):
+    def blit_text(self, texto, fonte, janela, x, y, delay=0, pos='topleft', cor=CORTEXTO):
         if delay > 0:             
             if self.text_count <= delay:
                 self.text_count += 1           
-                self.render_text(texto, fonte, janela, x, y, pos)     
+                self.render_text(texto, fonte, janela, x, y, pos, cor)     
             else:
                 self.text_count = 0
-        else: self.render_text(texto, fonte, janela, x, y, pos)
+        else: self.render_text(texto, fonte, janela, x, y, pos, cor)
 
     
-    def render_text(self, texto, fonte, janela, x, y, pos='topleft'):
-        objTexto = fonte.render(texto, True, CORTEXTO)
+    def render_text(self, texto, fonte, janela, x, y, pos, cor):
+        objTexto = fonte.render(texto, True, cor)
         rectTexto:pygame.Rect = objTexto.get_rect()
         if pos == 'topleft': rectTexto.topleft = (x, y)
         if pos == 'center': rectTexto.center = (x, y)
@@ -207,9 +221,12 @@ class Jackson():
         #settings.sound_over.play() 
         pos = settings.disp_size
         offset = settings.font_size
-        self.print_text('GAME OVER', (pos[0]/2),(pos[1]/2)-offset, 'center')
-        self.print_text('Pressione F1 para começar.', (pos[0]/2), (pos[1]/2)+offset, 'center')
-        self.print_text('Pressione ESC para sair.', (pos[0]/2), (pos[1]/2)+offset*2, 'center')               
+        self.blit_text(f'GAME OVER', settings.fonte, settings.screen, 
+                       (pos[0]/2),(pos[1]/2)-offset, pos='center') 
+        self.blit_text(f'Pressione F1 para começar.', settings.fonte, settings.screen, 
+                       (pos[0]/2), (pos[1]/2)+offset, pos='center') 
+        self.blit_text(f'Pressione ESC para sair.', settings.fonte, settings.screen,
+                       (pos[0]/2), (pos[1]/2)+offset*2, pos='center') 
         
         pygame.display.update()
         # Aguardando entrada por teclado para reiniciar o jogo ou sair.
@@ -225,9 +242,12 @@ class Jackson():
         
         pos = settings.disp_size
         offset = settings.font_size
+        '''self.blit_text(f'SCORE:{self.player.score}', settings.fonte, settings.screen, 10, 10) 
+        self.blit_text(f'SCORE:{self.player.score}', settings.fonte, settings.screen, 10, 10) 
+        self.blit_text(f'SCORE:{self.player.score}', settings.fonte, settings.screen, 10, 10) 
         self.print_text('YOU WIN!!!', (pos[0]/2),(pos[1]/2)-offset, 'center')
         self.print_text('Pressione F1 para recomeçar.', (pos[0]/2), (pos[1]/2)+offset, 'center')
-        self.print_text('Pressione ESC para sair.', (pos[0]/2), (pos[1]/2)+offset*2, 'center')    
+        self.print_text('Pressione ESC para sair.', (pos[0]/2), (pos[1]/2)+offset*2, 'center') '''   
         
         pygame.display.update()
         # Aguardando entrada por teclado para reiniciar o jogo ou sair.
