@@ -76,13 +76,17 @@ class AniObj(Sprite):
     
     def dead_box_animation(self): 
         self.counter += 1
-        if self.counter < self.delay*3:
+        if self.counter < self.delay*4:
             l = self.rect.left
             t = self.rect.top-(settings.base_tile*settings.factor_tile)
             w = self.rect.width
             h = self.rect.height
             rect = pygame.Rect(l,t,w,h)
-            settings.screen.blit(settings.coin[1], rect)
+            # coin animation
+            i = self.counter // self.delay  
+            rect.top -= self.counter
+            settings.screen.blit(settings.coin_box[i], rect)
+        else: self.dead_box = False
         
     
     def dead_bricks_animation(self, pos):        

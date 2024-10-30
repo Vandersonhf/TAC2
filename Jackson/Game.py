@@ -2,7 +2,7 @@ import pygame
 from .Settings import *
 from .Player import Player
 from .Objects import FixObj, AniObj
-from .Enemy import Enemy1
+from .Enemy import Mob1, Boss
 from .Editor import Editor
 
 class Jackson():
@@ -38,6 +38,9 @@ class Jackson():
             pygame.mixer.music.load('Jackson/sound/Smooth Criminal.wav')
             pygame.mixer.music.play(-1, 0.0)
             settings.somAtivado = True      
+            self.life_counter = 0
+            self.life_delay = 20
+            self.life_show = True
                             
             self.player = Player(settings.WIDTH*0.1, (settings.map_lin-3)*settings.tile)
             self.ground = pygame.sprite.Group()         
@@ -50,18 +53,18 @@ class Jackson():
                             
             self.background = pygame.sprite.Group()
             self.items = pygame.sprite.Group()
-            self.enemies = pygame.sprite.Group()        
+            self.coins = pygame.sprite.Group()
+            self.enemies = pygame.sprite.Group()      
+            self.boss_fire_list = pygame.sprite.Group()  
                     
             #load map and get boundary limits
             self.map_size = self.open_map()
             
             self.main_loop()
             
-            # Parando o jogo e mostrando a tela final.
-            #if self.boss != None and self.boss.dead: self.__menu_win__()        
-            #else: 
-            
-            self.__menu_last__()
+            # Parando o jogo e mostrando a tela final.            
+            if len(self.enemies) == 0: self.__menu_win__()
+            else: self.__menu_last__()
     
             
     def main_loop(self):
@@ -71,40 +74,77 @@ class Jackson():
 
             # Draw loop      
             settings.screen.blit(self.cenario, self.cenario_rect) 
-                            
-            self.ground.update() 
-            #self.background.update()  
-            self.items.update(self.cenario_rect) 
+            
+            # aux lists
+            loot = pygame.sprite.Group()
+            loot.add(self.items)
+            loot.add(self.coins)
             solid = pygame.sprite.Group()
             solid.add(self.ground)
             solid.add(self.items)
-            self.enemies.update(solid, self.cenario_rect)
-            # update elements in memory
-            self.cenario_rect = self.player.update(self.ground, self.enemies,
-                                                   self.cenario_rect, self.items) 
-            
-            # blit panel
-            settings.screen.blit(settings.coin[1], pygame.Rect(0,0,settings.base_tile,settings.base_tile))
-            self.blit_text(f'x : {self.player.score}', settings.fonte, settings.screen, 50, 10)             
-            cor = CORTEXTO
-            if self.player.life >30 and self.player.life < 70: cor = CORTEXTO2
-            if self.player.life <= 30: cor = CORTEXTO3
-            self.blit_text(f'LIFE:{self.player.life}', settings.fonte, 
-                           settings.screen, settings.WIDTH-200, 10, cor=cor)
-            #pygame.draw.rect(settings.screen, BRANCO, self.cenario_rect, 20)   #debug
-                                  
+            hazard = pygame.sprite.Group()
+            hazard.add(self.enemies)
+            hazard.add(self.boss_fire_list)
+                            
+            # updates in memory 
+            self.ground.update()              
+            self.items.update(self.cenario_rect) 
+            self.coins.update(self.cenario_rect)            
+            self.enemies.update(solid, self.cenario_rect, self.player, self.boss_fire_list)
+            if self.boss_fire_list: self.boss_fire_list.update(self.cenario_rect, self.ground, self.items)
+            self.cenario_rect = self.player.update(self.ground, hazard, self.cenario_rect, loot)
+                  
+            # Panel      
+            self.draw_panel()          
+                                              
             #update screen
             pygame.display.flip()
             settings.clock.tick(settings.fps)            
-            if not self.cenario_rect: return 
+            if not self.cenario_rect: return
+            if len(self.enemies) == 0: return   #WIN
     
+    
+    def draw_panel(self):
+        # blit panel
+        self.blit_text(f'PLAYER: Zé', settings.fonte, settings.screen, 10, 10)
+        self.blit_text(f'Kill all enemies to win!', settings.fonte, settings.screen, 350, 50)
+        self.blit_text(f'CTRL: run, SPACE: shoot, M: on/off music, ESC: exit',
+                        settings.fonte, settings.screen, 350, 10)
+        settings.screen.blit(settings.coin[0], pygame.Rect(0,50,settings.base_tile,settings.base_tile))
+        self.blit_text(f'x : {self.player.score}', settings.fonte, settings.screen, 50, 60)             
+        cor = VERDE
+        if self.player.life > 30 and self.player.life < 70: cor = CORTEXTO2
+        if self.player.life <= 30: cor = CORTEXTO3
+        # life bar
+        self.blit_text(f'LIFE', settings.fonte, settings.screen, settings.WIDTH-350, 10)
+        rect = pygame.Rect(settings.WIDTH-250, 10, 220, 24)  
+        life_rect = pygame.Rect(settings.WIDTH-250+2, 12,
+                                int((220*self.player.life)/self.player.max_life)-4, 20)      
+        pygame.draw.rect(settings.screen, 'white', rect)
+        # blinking when low life
+        if self.player.life <= 30:
+            if self.life_counter >= 0:
+                if self.life_counter < self.life_delay:
+                    self.life_counter += 1
+                else: 
+                    self.life_show = False
+                    self.life_counter = -1
+            else:
+                if self.life_counter > -self.life_delay:
+                    self.life_counter -= 1
+                else:
+                    self.life_show = True
+                    self.life_counter = 1
+        if self.life_show: pygame.draw.rect(settings.screen, cor, life_rect)  
+        
         
     def open_map(self):
         self.cenario.fill(BACKGROUND)
         max_x = 0   # get limits of the cenario
         max_y = 0   # y = lin
         t = settings.tile
-        tile_list = [settings.objects, settings.back, settings.back2, settings.items, settings.enemies]
+        tile_list = [settings.objects, settings.back, settings.back2, settings.items, settings.enemies,\
+                        [settings.boss[0]]]
         map = self.get_tile_type_map(tile_list)
         try:
             with open('Jackson/save.txt','r') as save_file:                           
@@ -154,12 +194,17 @@ class Jackson():
                     if item == 1:   #coin
                         obj = AniObj(settings.coin, settings.coin_mask, idx, item)
                         obj.rect = pygame.Rect(gx*t, gy*t, t, t)
-                        self.items.add(obj)  
+                        self.coins.add(obj)  
                 elif idx == 4: 
                     if item == 0:   #mob 1
-                        obj = Enemy1()
+                        obj = Mob1()
                         obj.rect = pygame.Rect(gx*t, gy*t, t, t)
                         self.enemies.add(obj)                      
+                elif idx == 5: 
+                    if item == 0:   #boss
+                        obj = Boss()
+                        obj.rect = pygame.Rect(gx*t, gy*t, t, t)                        
+                        self.enemies.add(obj)
                 if obj: 
                     if gx > max_x : max_x = gx
                     if gy > max_y : max_y = gy
@@ -218,7 +263,7 @@ class Jackson():
        
     def __menu_last__(self):        
         pygame.mixer.music.stop()
-        #settings.sound_over.play() 
+        settings.sound_lose_game.play() 
         pos = settings.disp_size
         offset = settings.font_size
         self.blit_text(f'GAME OVER', settings.fonte, settings.screen, 
@@ -231,28 +276,25 @@ class Jackson():
         pygame.display.update()
         # Aguardando entrada por teclado para reiniciar o jogo ou sair.
         self.__wait_input__()
-        #settings.sound_over.stop()
+        settings.sound_lose_game.stop()
         
         
     def __menu_win__(self):        
         pygame.mixer.music.stop()
-        #settings.sound_over.play() 
-         
-        self.draw_background()
-        
+        settings.sound_win_game.play()         
         pos = settings.disp_size
         offset = settings.font_size
-        '''self.blit_text(f'SCORE:{self.player.score}', settings.fonte, settings.screen, 10, 10) 
-        self.blit_text(f'SCORE:{self.player.score}', settings.fonte, settings.screen, 10, 10) 
-        self.blit_text(f'SCORE:{self.player.score}', settings.fonte, settings.screen, 10, 10) 
-        self.print_text('YOU WIN!!!', (pos[0]/2),(pos[1]/2)-offset, 'center')
-        self.print_text('Pressione F1 para recomeçar.', (pos[0]/2), (pos[1]/2)+offset, 'center')
-        self.print_text('Pressione ESC para sair.', (pos[0]/2), (pos[1]/2)+offset*2, 'center') '''   
+        self.blit_text(f'YOU WIN!!!', settings.fonte, settings.screen, 
+                       (pos[0]/2),(pos[1]/2)-offset, pos='center') 
+        self.blit_text(f'Pressione F1 para começar.', settings.fonte, settings.screen, 
+                       (pos[0]/2), (pos[1]/2)+offset, pos='center') 
+        self.blit_text(f'Pressione ESC para sair.', settings.fonte, settings.screen,
+                       (pos[0]/2), (pos[1]/2)+offset*2, pos='center')    
         
         pygame.display.update()
         # Aguardando entrada por teclado para reiniciar o jogo ou sair.
         self.__wait_input__()
-        #settings.sound_over.stop()
+        settings.sound_win_game.stop()
     
         
         

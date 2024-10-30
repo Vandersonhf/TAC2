@@ -1,4 +1,4 @@
-import pygame, numpy
+import pygame
 from .Sprite import Sprite
 from pygame.locals import *
 from .Game import settings
@@ -51,26 +51,31 @@ class Player(Sprite):
         self.rect_right = pygame.Rect((settings.WIDTH*0.1,0), (1,settings.HEIGHT))
 
         self.speed = 5
-        self.jumpspeed = 12
+        self.jumpspeed = 14
         self.vsp = 0        # vertical speed
         self.hsp = 0
-        self.gravity = 3
+        self.gravity = 4
         self.min_jumpspeed = 3   
-        self.walk_delay = 10
-        self.stand_delay = 15  
+        self.walk_delay = 12
+        self.stand_delay = 12  
         self.idle = 20
         self.count_idle = 0        
         self.prev_key = pygame.key.get_pressed()
+        self.orbs = pygame.sprite.Group() 
+        #self.orbs.update(self.cenario_rect)
+        self.orb_counter = 0
+        self.orb_delay = 20
         
-        # fire
-        self.fire = Fire()
+        # fire stream
+        #self.fire = Fire()
         
         #score
         self.score = 0
         self.life = 100
+        self.max_life = 100
         self.hit = False
         self.hit_counter = 0
-        self.hit_delay = 100
+        self.hit_delay = 50
                 
 
     def update(self, boxes, enemies, cenario_rect:pygame.Rect, items):
@@ -79,15 +84,19 @@ class Player(Sprite):
         self.onceil = self.check_collision(0, -1, boxes, "DOWN")
         
         #gravity and keys
-        self.check_gravity()        
-        self.check_keys()
+        self.check_gravity()   
+        # check movement - initial and orbs 
+        ini_pos = [self.rect.left-cenario_rect.left, self.rect.top-cenario_rect.top+20]
+        self.check_keys(pygame.Rect(ini_pos,(self.rect.width, self.rect.height)))
+        self.orbs.update(cenario_rect)
         
         #collide enemy, items, etc
         dead = self.collide_enemy(enemies)
+        if self.rect.bottom + self.vsp > cenario_rect.bottom: dead = True
         if dead: 
             self.draw(settings.screen)
             return False
-        self.fire_enemy(enemies) 
+        self.fire_enemy(enemies, boxes, items) 
         box = self.collide_item(items)
         if len(box) > 0: boxes.add(box)
         
@@ -222,8 +231,8 @@ class Player(Sprite):
         # hit animation
         if self.hit:
             self.hit_counter += 1
-            if self.hit_counter < self.hit_delay//2: self.image = settings.dead[1]
-            else: self.image = settings.dead[2]
+            if self.hit_counter < self.hit_delay//2: self.image = settings.dead[2]
+            else: self.image = settings.dead[1]
             self.rect = self.image.get_rect(center=self.rect.center)
             if self.hit_counter > self.hit_delay:
                 self.hit = False
@@ -250,32 +259,55 @@ class Player(Sprite):
                                 self.hit_counter = 0
                         else:
                             #stomp kill
-                            if not self.hit:
+                            if not self.hit and enemy.ID == 1:
                                 if self.rect.collidepoint((enemy.rect.centerx, enemy.rect.top)):                        
                                     self.vsp = -int(self.jumpspeed-self.speed)
                                     enemy.killed = True
                                     settings.play_sound(settings.sound_stomp)
                     
     
-    def fire_enemy(self, enemies:pygame.sprite.Group):
+    def fire_enemy(self, enemies:pygame.sprite.Group, boxes, items):
+        # hit items
+        for item in items:
+            for orb in self.orbs:
+                if orb.rect.colliderect(item.rect):
+                    orb.kill()
+        # hit box
+        for box in boxes:
+            for orb in self.orbs:
+                if orb.rect.colliderect(box.rect):
+                    orb.kill()
+        # hit enemy
         for enemy in enemies:
+            for orb in self.orbs:
+                if orb.rect.colliderect(enemy.rect):
+                    offset = (enemy.rect.x - orb.rect.x, enemy.rect.y - orb.rect.y)
+                    collide = orb.mask.overlap(enemy.mask, offset) 
+                    if collide:
+                        orb.kill()
+                        enemy.life -= 10
+        
+        # stream - old
+        '''for enemy in enemies:
             if self.fire.active:
                 if self.fire.rect.colliderect(enemy.rect):
                     offset = (enemy.rect.x - self.fire.rect.x, enemy.rect.y - self.fire.rect.y)
                     collide = self.fire.mask.overlap(enemy.mask, offset) 
                     if collide:
-                        enemy.kill()                      
+                        enemy.kill() '''                     
 
 
-    def check_keys(self):
+    def check_keys(self, ini_rect):
         """check keys"""
         key = pygame.key.get_pressed()
         # if user clicks on cross button, close the game 
         for event in pygame.event.get():
+            # handle one press
             if event.type == QUIT or (event.type == KEYDOWN and
                                         event.key == K_ESCAPE): 
                 pygame.quit() 
-                sys.exit()    
+                sys.exit()  
+            # pause/start music  
             if (event.type == KEYDOWN and event.key == K_m):
                 if settings.somAtivado: 
                     pygame.mixer.music.stop()
@@ -283,8 +315,35 @@ class Player(Sprite):
                 else: 
                     pygame.mixer.music.play(-1, 0.0)
                     pygame.mixer.music.set_volume(0.2)
-                    settings.somAtivado = True                
-        if key[pygame.K_LEFT]:
+                    settings.somAtivado = True  
+            # shoot orb
+            if (event.type == KEYDOWN and event.key == K_SPACE): 
+                self.count_idle = 0 
+                if self.orb_counter > self.orb_delay:
+                    self.orb_counter = 0               
+                #play sound - start of cycle        
+                if self.orb_counter == 0:                    
+                    fire = FireOrb(ini_rect)
+                    if self.facing_left: 
+                        self.image = self.atk_cycle_flip[0]
+                        self.rect = self.image.get_rect(center=self.rect.center)
+                        self.mask = self.atk_cycle_flip_masks[0]                        
+                        fire.direction_left = 1
+                    else: 
+                        self.image = self.atk_cycle[0]
+                        self.rect = self.image.get_rect(center=self.rect.center)
+                        self.mask = self.atk_cycle_masks[0]
+                        fire.direction_left = -1                   
+                    self.orbs.add(fire)
+                    settings.play_sound(settings.sound_fire)
+        if self.orb_counter <= self.orb_delay: self.orb_counter += 1                                                   
+        #get down - handle press hold
+        if key[pygame.K_DOWN] and self.onground:
+            self.count_idle = 0
+            self.hsp = 0
+            self.image = settings.dead[1]
+            self.rect = self.image.get_rect(midbottom=self.rect.midbottom)
+        elif key[pygame.K_LEFT]:
             self.facing_left = True
             self.count_idle = 0
             if self.onground:
@@ -296,18 +355,32 @@ class Player(Sprite):
             if self.onground:
                 self.walk_animation(self.walk_cycle, self.walk_cycle_masks,self.walk_delay)
             self.hsp = self.speed                       
-        elif self.vsp == 0 and self.hsp == 0:                                     
+        elif self.vsp == 0 and self.hsp == 0:
+            # stand still
+            '''if self.facing_left: 
+                self.image = self.atk_cycle_flip[0]
+                self.rect = self.image.get_rect(center=self.rect.center)
+                self.mask = self.atk_cycle_flip_masks[0]
+                #self.image = settings.player_stand_flip[0]
+                #self.mask = settings.player_stand_flip_masks[0]
+            else: 
+                self.image = self.atk_cycle[0]
+                self.rect = self.image.get_rect(center=self.rect.center)
+                self.mask = self.atk_cycle_masks[0]
+                #self.image = settings.player_stand[0]
+                #self.mask = settings.player_stand_masks[0]'''
             #DANCE!!!
             self.count_idle += 1
             if self.count_idle > self.idle:
+                #settings.play_sound(settings.sound_fire) 
                 self.vsp = 0    # dont move on box edges               
                 if self.facing_left:
                     self.stand_animation(self.stand_cycle_flip, self.stand_cycle_flip_masks, self.stand_delay)                    
                 else:                    
                     self.stand_animation(self.stand_cycle, self.stand_cycle_masks,self.stand_delay)
         
-        # fire
-        if key[pygame.K_SPACE] and self.onground and self.hsp == 0:            
+        # fire stream       
+        '''if key[pygame.K_SPACE] and self.onground and self.hsp == 0:            
             self.count_idle = 0     
             self.fire.on()      
             if not self.facing_left:
@@ -326,7 +399,7 @@ class Player(Sprite):
                 y = self.rect.centery
                 self.fire.set(x,y)        
                 self.fire.fire_animation(flip=True)
-        else: self.fire.off()
+        else: self.fire.off()'''
                      
         #jump
         if key[pygame.K_UP] and self.onground:
@@ -334,13 +407,18 @@ class Player(Sprite):
             self.vsp = -self.jumpspeed
             settings.play_sound(settings.sound_jump)
 
+        #run
+        if key[pygame.K_LCTRL] and self.onground:
+            self.count_idle = 0
+            self.hsp = self.hsp * 1.5
+                                
         # variable height jumping
         if self.prev_key[pygame.K_UP] and not key[pygame.K_UP]:
             if self.vsp < -self.min_jumpspeed:
                 self.vsp = -self.min_jumpspeed
         self.prev_key = key
-
-    
+        
+            
     def adjust_move(self, x, y, boxes):
         dx = x
         dy = y    
@@ -418,7 +496,7 @@ class Player(Sprite):
         index = self.jump_animation_index 
                 
         if speed > 0: index = 2
-        else: index = 0
+        else: index = 1
         #if abs(speed) < self.gravity*2: index = 1
         
         # change img and mask after delay        
@@ -475,5 +553,46 @@ class Fire(Sprite):
         self.fire_sound_counter += 1
         if self.fire_sound_counter > self.fire_delay*len(self.fire):
             self.fire_sound_counter = 0 
+        #draw
+        self.draw(settings.screen)
+        
+
+
+class FireOrb(Sprite):
+    """Firing while holding key"""
+    def __init__(self, rect, startx=0, starty=0):
+        super().__init__(settings.orb[0], settings.orb_masks[0], startx, starty)
+        
+        self.orb = settings.orb
+        self.orb_masks = settings.orb_masks
+                
+        self.orb_animation_index = 0
+        self.orb_count = 0  
+        self.orb_delay = 2       
+        self.rect_init = rect
+        self.offsetX = 0
+        self.offsetY = 0
+        self.direction_left = 1 
+        self.hsp = 10
+                    
+    
+    def update(self, cenario_rect):               
+        #reposition of whole cenario items to screen
+        if cenario_rect:
+            self.rect.left = self.rect_init.left + cenario_rect.left + self.offsetX
+            self.rect.top = self.rect_init.top + cenario_rect.top 
+        
+        self.offsetX -= self.hsp * self.direction_left        
+        self.fire_animation()
+                
+                
+    def fire_animation(self):
+        '''Enter with surface list and its masks
+        plus max delay to change surface
+        '''        
+        self.orb_animation_index, self.orb_count = self.animation(self.orb,
+                                            self.orb_masks, self.orb_delay,
+                                            self.orb_animation_index, self.orb_count)
+               
         #draw
         self.draw(settings.screen)

@@ -1,7 +1,5 @@
 import pygame
 
-#WIDTH = 800
-#HEIGHT = 600
 BACKGROUND = (50, 100, 200)
 
 # Definindo as cores
@@ -83,13 +81,28 @@ class Settings:
         w = [self.base_tile] * len(left)
         h = [self.base_tile] * len(left)
         self.items, self.items_mask = self.cut_sub_surface(full_items, left, top, w, h, self.factor_tile)
+          
+        #boss fire
+        left = [100,100]
+        top = [128,137]
+        w = [24] * len(left)
+        h = [7] * len(left)
+        self.boss_fire, self.boss_fire_masks = self.cut_sub_surface(full_items, left, top, w, h, self.factor_tile)
+        self.boss_fire_flip, self.boss_fire_flip_masks = self.get_flipped(self.boss_fire)  
                 
         # items - coins        
         left = [0,16,32,48]
-        top = [96,96,96,96]
+        top = [81] * len(left)
         w = [self.base_tile] * len(left)
         h = [self.base_tile] * len(left)
         self.coin, self.coin_mask = self.cut_sub_surface(full_items, left, top, w, h, self.factor_tile)
+        
+        # items - coin out of box
+        left = [0,16,32,48]
+        top = [96] * len(left)
+        w = [self.base_tile] * len(left)
+        h = [self.base_tile] * len(left)
+        self.coin_box, self.coin_box_mask = self.cut_sub_surface(full_items, left, top, w, h, self.factor_tile)
         
         # items - box ?        
         left = [0,16,32,48]
@@ -128,7 +141,7 @@ class Settings:
         h = [43,48,48] 
         self.dead, self.dead_mask = self.cut_sub_surface(full, left, top, w, h, self.factor_tile/2)
         
-        #attack - fire
+        # attack - fire
         left = [262,297,358]
         top = [1105] * len(left)
         w = [30,56,56]
@@ -136,6 +149,13 @@ class Settings:
         self.fire, self.fire_masks = self.cut_sub_surface(full, left, top, w, h, self.factor_tile/2)
         self.fire_flip, self.fire_flip_masks = self.get_flipped(self.fire)
         
+        # orb                                   # old with all - creating orb
+        left = [1081,1126,1167]                 #left = [983,1001,1027,1053,1081,1126,1167]
+        top = [509,507,506]                     #top = [513,509,509,509,509,507,506]
+        w = [41,37,41]                          #w = [13,22,22,24,41,37,41]
+        h = [23,28,28]                          #h = [16,22,23,24,23,28,28] 
+        self.orb, self.orb_masks = self.cut_sub_surface(full, left, top, w, h, self.factor_tile/2)
+         
         #enemies - pallete
         enemy_all = pygame.image.load('Jackson/images/mobs-cutout.png').convert_alpha()        
         left = [238]
@@ -159,6 +179,46 @@ class Settings:
         h = [self.base_tile] * len(left)
         self.enemy1_dead, self.enemy1_dead_masks = self.cut_sub_surface(enemy_all, left, top, w, h, self.factor_tile)
         
+        # boss
+        left = [257,292,327,362]
+        top = [367] * len(left)
+        w = [self.base_tile*2] * len(left)
+        h = [self.base_tile*2] * len(left)
+        self.boss_flip, self.boss_flip_masks = self.cut_sub_surface(enemy_all, left, top, w, h, self.factor_tile)
+        self.boss, self.boss_masks = self.get_flipped(self.boss_flip)
+        
+        '''# player attack
+        left = [384,419,454,508]
+        top = [860,860,867,867] 
+        w = [23,23,46,46] 
+        h = [53,53,51,51] 
+        self.player_atk, self.player_atk_masks = self.cut_sub_surface(full, left, top, w, h, self.factor_tile/2)
+        self.player_atk_flip, self.player_atk_flip_masks = self.get_flipped(self.player_atk)
+        
+        # walk animation - load them all just once before execution        
+        left = [161,187,221,248,274,308]
+        top = [174] * len(left)      
+        w = [17,26,18,18,26,23]
+        h = [56] * len(left) 
+        self.player_walk, self.player_walk_masks = self.cut_sub_surface(full, left, top, w, h, self.factor_tile/2)
+        self.player_walk_flip, self.player_walk_flip_masks = self.get_flipped(self.player_walk)
+        
+        #jump animation        
+        left = [471,438]
+        top = [725,709]
+        w = [25] * len(left)
+        h = [50] * len(w)
+        self.player_jump_flip, self.player_jump_flip_masks = self.cut_sub_surface(full, left, top, w, h, self.factor_tile/2)
+        self.player_jump, self.player_jump_masks = self.get_flipped(self.player_jump_flip)
+        
+        #stand animation        
+        left = [121,120,152,190,231,278,312,343,376,408,441]
+        top = [175,528,528,528,528,528,528,528,528,528,528] 
+        w = [13,21,31,35,33,22,20,23,21,24,22] 
+        h = [55,55,55,55,55,55,55,55,55,55,55] 
+        self.player_stand, self.player_stand_masks = self.cut_sub_surface(full, left, top, w, h, self.factor_tile/2)
+        self.player_stand_flip, self.player_stand_flip_masks = self.get_flipped(self.player_stand)
+        '''
         
         player_all = pygame.image.load('Jackson/images/jackson_align-cutout.png').convert_alpha()
         #attack
@@ -196,7 +256,13 @@ class Settings:
 
     def load_sounds(self):
         self.sound_fire = pygame.mixer.Sound('Jackson/sound/Uh.wav')
-        self.sound_fire.set_volume(0.1)
+        self.sound_fire.set_volume(0.05)
+        self.sound_win = pygame.mixer.Sound('Jackson/sound/Wohoou.wav')
+        self.sound_win.set_volume(0.1)
+        self.sound_win_game = pygame.mixer.Sound('Jackson/sound/Beat It.wav')
+        self.sound_win_game.set_volume(0.1)
+        self.sound_lose_game = pygame.mixer.Sound('Jackson/sound/Another Part Of Me.wav')
+        self.sound_lose_game.set_volume(0.1)
         self.sound_stomp = pygame.mixer.Sound('Jackson/sound/stomp.wav')
         self.sound_stomp.set_volume(0.1)
         self.sound_jump = pygame.mixer.Sound('Jackson/sound/jump.wav')
@@ -211,6 +277,10 @@ class Settings:
         self.sound_hit.set_volume(0.3)
         self.sound_dead = pygame.mixer.Sound('Jackson/sound/Wow.wav')
         self.sound_dead.set_volume(0.3)
+        self.sound_boss_fire = pygame.mixer.Sound('Jackson/sound/firebreath.wav')
+        self.sound_boss_fire.set_volume(0.3)
+        self.sound_boss_dead = pygame.mixer.Sound('Jackson/sound/Uaaaaaaaaah.wav')
+        self.sound_boss_dead.set_volume(0.5)
         #pygame.mixer.music.load('Jackson/sound/Smooth Criminal.wav')
         #pygame.mixer.music.play(-1, 0.0)
         pygame.mixer.music.set_volume(0.2)

@@ -29,11 +29,19 @@ class Sprite(pygame.sprite.Sprite):
         if settings.debug: screen.blit(self.mask.to_surface(), self.rect)
     
        
-    def animation(self, images:list, masks:list, delay:int, index:int, counter:int):
+    def animation(self, images:list, masks:list, delay:int, index:int, counter:int, inflate:int=0):
         # change img and mask after delay        
         self.image = images[index]           
-        self.rect = self.image.get_rect(center=self.rect.center)        
-        self.mask = masks[index]   
+        self.rect = self.image.get_rect(center=self.rect.center)  
+        #self.rect = self.image.get_rect(midbottom=self.rect.midbottom)      
+        self.mask = masks[index] 
+        # inflate image + or -
+        if inflate != 0 and self.rect.size[0] > 1:
+            old = self.rect.center
+            self.rect = self.rect.inflate(inflate, inflate)            
+            self.image = pygame.transform.scale(self.image, self.rect.size)   
+            self.rect.center = old
+        # counting in circle  
         counter += 1
         if index < len(images)-1:            
             if counter > delay:                

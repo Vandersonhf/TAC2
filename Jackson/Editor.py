@@ -16,7 +16,9 @@ class Editor():
         self.map_lin = settings.map_lin
         self.map_col = settings.map_col
         
-        self.tile_list = settings.objects + settings.back + settings.back2 + settings.items + settings.enemies
+        boss = pygame.transform.rotozoom(settings.boss[0], 0, 0.5)
+        self.tile_list = settings.objects + settings.back + settings.back2 + settings.items + settings.enemies\
+                            +[boss]
         self.total_size = len(self.tile_list)
         
         self.text_count = 0     # count time on text appear
