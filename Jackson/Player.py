@@ -2,6 +2,7 @@ import pygame
 from .Sprite import Sprite
 from pygame.locals import *
 from .Game import settings
+from .SQL import sql_request, sql_update
 import sys
 
 class Player(Sprite):
@@ -76,6 +77,8 @@ class Player(Sprite):
         self.hit = False
         self.hit_counter = 0
         self.hit_delay = 50
+        self.text_count = 0
+        self.message = ""
                 
 
     def update(self, boxes, enemies, cenario_rect:pygame.Rect, items):
@@ -336,6 +339,28 @@ class Player(Sprite):
                         fire.direction_left = -1                   
                     self.orbs.add(fire)
                     settings.play_sound(settings.sound_fire)
+            # save game
+            if (event.type == KEYDOWN and event.key == K_F5): 
+                    sql_update(self.score, self.life)
+                    self.text_count = 1     # check count outside for loop
+                    self.message = "Game Saved!!!"
+                    '''save = f"{self.score},{self.life}"
+                    self.text_count += 1
+                    with open("save.txt", "w") as arq:                        
+                        arq.write(save)''' 
+            # load game
+            if (event.type == KEYDOWN and event.key == K_F6):
+                    dados = sql_request() 
+                    self.score = dados[0]
+                    self.life = dados[1]
+                    self.text_count = 1
+                    self.message = "Game Load success!"
+                    '''with open("save.txt", "r") as arq:
+                        dados = arq.read()
+                        val = dados.split(",")
+                        self.score = int(val[0])
+                        self.life = int(val[1])'''        
+        # update fire counter            
         if self.orb_counter <= self.orb_delay: self.orb_counter += 1                                                   
         #get down - handle press hold
         if key[pygame.K_DOWN] and self.onground:
@@ -417,6 +442,30 @@ class Player(Sprite):
             if self.vsp < -self.min_jumpspeed:
                 self.vsp = -self.min_jumpspeed
         self.prev_key = key
+        
+        # texto save game - avoid running too many times inside event for loop
+        if self.text_count > 0:
+            self.blit_text(f'{self.message}', settings.fonte, settings.screen, 
+                              settings.WIDTH/2, settings.HEIGHT*0.2,
+                                100, 'center')
+
+
+    def blit_text(self, texto, fonte, janela, x, y, delay=0, pos='topleft'):
+        if delay > 0:             
+            if self.text_count <= delay:
+                self.text_count += 1           
+                self.render_text(texto, fonte, janela, x, y, pos)     
+            else:
+                self.text_count = 0
+        else: self.render_text(texto, fonte, janela, x, y, pos)
+
+
+    def render_text(self, texto, fonte, janela, x, y, pos='topleft'):
+        objTexto = fonte.render(texto, True, settings.CORTEXTO)
+        rectTexto:pygame.Rect = objTexto.get_rect()
+        if pos == 'topleft': rectTexto.topleft = (x, y)
+        if pos == 'center': rectTexto.center = (x, y)
+        janela.blit(objTexto, rectTexto)
         
             
     def adjust_move(self, x, y, boxes):

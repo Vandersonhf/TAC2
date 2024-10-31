@@ -27,6 +27,7 @@ class Settings:
         # Configurando a fonte.        
         self.font_size = 48 
         self.fonte = pygame.font.Font(None, self.font_size)
+        self.CORTEXTO = (255, 255, 255)
         
         #game globals        
         self.fps = 60

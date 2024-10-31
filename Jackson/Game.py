@@ -108,7 +108,7 @@ class Jackson():
         # blit panel
         self.blit_text(f'PLAYER: Zé', settings.fonte, settings.screen, 10, 10)
         self.blit_text(f'Kill all enemies to win!', settings.fonte, settings.screen, 350, 50)
-        self.blit_text(f'CTRL: run, SPACE: shoot, M: on/off music, ESC: exit',
+        self.blit_text(f'CTRL:run,SPACE:shoot,M:on/off music,ESC:exit,F5:save,F6:load',
                         settings.fonte, settings.screen, 350, 10)
         settings.screen.blit(settings.coin[0], pygame.Rect(0,50,settings.base_tile,settings.base_tile))
         self.blit_text(f'x : {self.player.score}', settings.fonte, settings.screen, 50, 60)             
