@@ -14,11 +14,13 @@ class FixObj(Sprite):
         self.rect_right = pygame.Rect(self.rect.topright, (1,self.rect.bottomright[1] - self.rect.topright[1]))
 
     def update(self):
+        # if in screen update
+        #if settings.screen.get_rect().colliderect(self.rect):        
         self.rect_up = pygame.Rect(self.rect.topleft, (self.rect.topright[0] - self.rect.topleft[0],1))
         self.rect_down = pygame.Rect(self.rect.bottomleft, (self.rect.bottomright[0] - self.rect.bottomleft[0],1))
         self.rect_right = pygame.Rect(self.rect.topright, (1,self.rect.bottomright[1] - self.rect.topright[1]))
         self.rect_left = pygame.Rect((self.rect.topleft[0], self.rect.topleft[1]),
-                                     (1,self.rect.bottomleft[1] - self.rect.topleft[1]))    
+                                    (1,self.rect.bottomleft[1] - self.rect.topleft[1]))    
         
           
         
@@ -38,6 +40,7 @@ class AniObj(Sprite):
         self.dead = False        
         self.dead_brick = False
         self.dead_box = False
+        self.star = False
         self.depleted = depleted    # final surfaces
         self.pos = None
                                
@@ -53,8 +56,8 @@ class AniObj(Sprite):
                                 
         #reposition of whole cenario items to screen
         if cenario_rect:
-            self.rect.left = self.rect_init.left + cenario_rect.left
-            self.rect.top = self.rect_init.top + cenario_rect.top
+            self.rect.left = self.rect_init.left + cenario_rect.left - settings.warp_left
+            self.rect.top = self.rect_init.top + cenario_rect.top - settings.warp_top
         
         # check which side hit
         self.rect_up = pygame.Rect(self.rect.topleft, (self.rect.topright[0] - self.rect.topleft[0],1))
@@ -85,7 +88,8 @@ class AniObj(Sprite):
             # coin animation
             i = self.counter // self.delay  
             rect.top -= self.counter
-            settings.screen.blit(settings.coin_box[i], rect)
+            if self.star: settings.screen.blit(settings.star[i], rect)
+            else: settings.screen.blit(settings.coin_box[i], rect)  
         else: self.dead_box = False
         
     

@@ -4,6 +4,7 @@ from .Player import Player
 from .Objects import FixObj, AniObj
 from .Enemy import Mob1, Boss
 from .Editor import Editor
+from .Particles import NiceEffect
 
 class Jackson():
     def run(self, debug:bool):
@@ -60,17 +61,24 @@ class Jackson():
             #load map and get boundary limits
             self.map_size = self.open_map()
             
+            #boom = NiceEffect()
+            #boom.fireworks1(self.cenario, self.cenario_rect)
+            #boom.fireworks(self.cenario, self.cenario_rect)
+            
             self.main_loop()
             
             # Parando o jogo e mostrando a tela final.            
-            if len(self.enemies) == 0: self.__menu_win__()
+            if len(self.enemies) == 0: 
+                boom = NiceEffect()
+                boom.fireworks(self.cenario, self.cenario_rect)                
+                self.__menu_win__()
             else: self.__menu_last__()
     
-            
+   
     def main_loop(self):
         # main game loop
         while True:
-            pygame.event.pump()
+            #pygame.event.pump()
 
             # Draw loop      
             settings.screen.blit(self.cenario, self.cenario_rect) 
@@ -98,7 +106,8 @@ class Jackson():
             self.draw_panel()          
                                               
             #update screen
-            pygame.display.flip()
+            #pygame.display.flip()
+            pygame.display.update()
             settings.clock.tick(settings.fps)            
             if not self.cenario_rect: return
             if len(self.enemies) == 0: return   #WIN
@@ -443,3 +452,4 @@ class Menu_icon():
     
     def gety(self):
         return self.pos[1]
+    

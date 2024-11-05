@@ -34,8 +34,8 @@ class Editor():
         self.b1 = Button(self.grid_max_x+10,self.grid_max_y,150,50,"Save map")   
         self.b2 = Button(self.W-160,self.grid_max_y,150,50,"Exit")  
         self.b3 = Button(10,self.grid_max_y,150,50,"Back") 
-        self.b_right = Button(self.grid_w+40,self.H/2,50,50,">>")  
-        self.b_left = Button(self.grid_start_x-60,self.H/2,50,50,"<<")    
+        self.b_right = Button(self.grid_w+40,self.H/2,50,50,">")  
+        self.b_left = Button(self.grid_start_x-60,self.H/2,50,50,"<")    
         self.b_up1 = Button(self.grid_max_x/2,self.grid_start_y-60,50,50,"^")
         self.b_down1 = Button(self.grid_max_x/2,self.grid_h+20,50,50,"v")
                        
@@ -80,11 +80,12 @@ class Editor():
             l = []      
             pos_col = 0      
             for gx in range(self.grid_start_x,self.grid_w+1,self.tile_size):
-                rect = pygame.Rect(gx,gy,self.tile_size,self.tile_size)
+                rect = pygame.Rect(gx-10,gy-10,self.tile_size,self.tile_size)   # adjust scale -10
                 type = self.map[pos_lin+self.grid_anchor[0]][pos_col+self.grid_anchor[1]].type 
                 surf = None                
                 if type > 0:
-                    surf = self.tile_list[type-1]               
+                    surf = self.tile_list[type-1]
+                    #dv          
                 tile = Tile(surf, rect, type)
                 l.append(tile)
                 pos_col += 1
@@ -103,10 +104,11 @@ class Editor():
         for g_lin in range(len(self.grid)):                
             for g_col in range(len(self.grid[0])):
                 tile:Tile = self.grid[g_lin][g_col]
-                block:pygame.Rect = tile.rect
+                block:pygame.Rect = tile.rect                
                 pygame.draw.rect(settings.screen, BRANCO, block,1)
-                if tile.surf:
-                    settings.screen.blit(tile.surf, tile.rect.topleft)                
+                if tile.surf:                    
+                    block = pygame.Rect(tile.rect.left, tile.rect.top, tile.rect.width, tile.rect.height) 
+                    settings.screen.blit(tile.surf, block)              
         self.draw_pallete()
     
     
@@ -242,7 +244,7 @@ class Editor():
         for g_lin in range(len(self.grid)):
             for g_col in range(len(self.grid[0])):
                 tile:Tile = self.grid[g_lin][g_col]
-                block:pygame.Rect = tile.rect
+                block:pygame.Rect = tile.rect                
                 if block.collidepoint(pygame.mouse.get_pos()):
                     sel_tile = self.tile_pal[self.select_lin][self.select_col]
                     settings.screen.blit(sel_tile.surf, block.topleft)

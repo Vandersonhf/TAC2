@@ -113,23 +113,17 @@ class Mob1(Enemy):
         self.rect_right = pygame.Rect(self.rect.topright, (1,self.rect.bottomright[1] - self.rect.topright[1]))
         
         
-    def update(self, boxes, cenario_rect, player:Player=None, fire_list = None):     
+    def update(self, boxes, cenario_rect, player:Player=None, fire_list = None): 
+        # keep init rect
         if not self.rect_init:
             self.rect_init = self.rect       
         #reposition of whole cenario items to screen
         if cenario_rect:
-            self.rect.left = self.rect_init.left + cenario_rect.left + self.offsetX
-            self.rect.top = self.rect_init.top + cenario_rect.top + self.offsetY
-                                        
-        # check which side hit
-        self.rect_up = pygame.Rect(self.rect.topleft, (self.rect.topright[0] - self.rect.topleft[0],1))
-        self.rect_down = pygame.Rect(self.rect.bottomleft, (self.rect.bottomright[0] - self.rect.bottomleft[0],1))
-        self.rect_right = pygame.Rect(self.rect.topright, (1,self.rect.bottomright[1] - self.rect.topright[1]))
-        self.rect_left = pygame.Rect((self.rect.topleft[0], self.rect.topleft[1]),
-                                     (1,self.rect.bottomleft[1] - self.rect.topleft[1])) 
-        
-        # if dead by player?  
-        if self.life <= 0: self.killed = True      
+            self.rect.left = self.rect_init.left + cenario_rect.left + self.offsetX - settings.warp_left
+            self.rect.top = self.rect_init.top + cenario_rect.top + self.offsetY - settings.warp_top
+                
+        # if dead by player? or out of scenario        
+        if self.life <= 0 or self.rect.bottom > cenario_rect.bottom: self.killed = True      
         if self.killed:
             self.image = self.dead
             self.rect = self.image.get_rect(center=self.rect.center)
@@ -138,7 +132,7 @@ class Mob1(Enemy):
             if self.dead_counter > self.dead_delay:
                 self.dead_counter = 0
                 self.kill()
-        else:
+        else:            
             # check movement in screen only - see ahead?
             if self.rect.left > -100 and self.rect.left < settings.WIDTH+100 \
                     and self.rect.top > -100 and self.rect.top < settings.HEIGHT+100:
@@ -147,22 +141,29 @@ class Mob1(Enemy):
                 X, Y = self.adjust_move(diffX,diffY,boxes)
                 self.offsetX -= X 
                 self.offsetY += Y 
+                
+                # check which side hit
+                self.rect_up = pygame.Rect(self.rect.topleft, (self.rect.topright[0] - self.rect.topleft[0],1))
+                self.rect_down = pygame.Rect(self.rect.bottomleft, (self.rect.bottomright[0] - self.rect.bottomleft[0],1))
+                self.rect_right = pygame.Rect(self.rect.topright, (1,self.rect.bottomright[1] - self.rect.topright[1]))
+                self.rect_left = pygame.Rect((self.rect.topleft[0], self.rect.topleft[1]),
+                                            (1,self.rect.bottomleft[1] - self.rect.topleft[1])) 
+                
+                self.onground = self.check_collision(0, 1, boxes, "UP")
+                self.onceil = self.check_collision(0, -1, boxes, "DOWN")
+                self.right = self.check_collision(1, 0, boxes, "LEFT")
+                self.left = self.check_collision(-1, 0, boxes, "RIGHT")        
+                if self.rect.left > 0 and self.rect.left < settings.WIDTH \
+                            and self.rect.top > 0 and self.rect.top < settings.HEIGHT:
+                    self.check_gravity() 
+                if self.right: self.direction_left = 1
+                if self.left: self.direction_left = -1
             
             # animate            
             self.walk_animation_index,self.walk_count = self.animation(self.walk,
                                                 self.walk_masks, self.walk_delay,
-                                                self.walk_animation_index, self.walk_count)
+                                                self.walk_animation_index, self.walk_count)            
         
-        self.onground = self.check_collision(0, 1, boxes, "UP")
-        self.onceil = self.check_collision(0, -1, boxes, "DOWN")
-        self.right = self.check_collision(1, 0, boxes, "LEFT")
-        self.left = self.check_collision(-1, 0, boxes, "RIGHT")        
-        if self.rect.left > 0 and self.rect.left < settings.WIDTH \
-                    and self.rect.top > 0 and self.rect.top < settings.HEIGHT:
-            self.check_gravity() 
-        if self.right: self.direction_left = 1
-        if self.left: self.direction_left = -1
-         
         self.draw(settings.screen)
     
        
@@ -201,26 +202,18 @@ class Boss(Enemy):
         self.rect_right = pygame.Rect(self.rect.topright, (1,self.rect.bottomright[1] - self.rect.topright[1]))
         
         
-    def update(self, boxes, cenario_rect, player:Player=None, fire_list = None):     
+    def update(self, boxes, cenario_rect, player:Player=None, fire_list = None): 
         # point of origin
         if not self.rect_init:
-            self.rect_init = self.rect      
-        
-        #print(self.rect, ' and ', cenario_rect.left, ' and ',self.offsetX,' and ', self.rect_init.left ) 
+            self.rect_init = self.rect              
+         
         #reposition of whole cenario items to screen
         if cenario_rect:
-            self.rect.left = self.rect_init.left + cenario_rect.left + self.offsetX
-            self.rect.top = self.rect_init.top + cenario_rect.top + self.offsetY
-                                        
-        # check which side hit
-        self.rect_up = pygame.Rect(self.rect.topleft, (self.rect.topright[0] - self.rect.topleft[0],1))
-        self.rect_down = pygame.Rect(self.rect.bottomleft, (self.rect.bottomright[0] - self.rect.bottomleft[0],1))
-        self.rect_right = pygame.Rect(self.rect.topright, (1,self.rect.bottomright[1] - self.rect.topright[1]))
-        self.rect_left = pygame.Rect((self.rect.topleft[0], self.rect.topleft[1]),
-                                     (1,self.rect.bottomleft[1] - self.rect.topleft[1])) 
-        
-        # if dead by player?     
-        if self.life <= 0: 
+            self.rect.left = self.rect_init.left + cenario_rect.left + self.offsetX - settings.warp_left
+            self.rect.top = self.rect_init.top + cenario_rect.top + self.offsetY - settings.warp_top
+           
+        # if dead by player? or out of scenario
+        if self.life <= 0 or self.rect.bottom > cenario_rect.bottom: 
             self.life = 100 # reset - once
             settings.play_sound(settings.sound_boss_dead)
             self.killed = True      
@@ -234,10 +227,10 @@ class Boss(Enemy):
             # check facing side          
             if self.rect.center[0] > player.rect.center[0]: self.side = "left"
             else: self.side = "right"
-            
+                 
             # check movement in screen only - see ahead?
             if self.rect.left > -settings.WIDTH and self.rect.left < settings.WIDTH*2 \
-                    and self.rect.top > -settings.HEIGHT and self.rect.top < settings.HEIGHT*2:
+                    and self.rect.top > -settings.HEIGHT and self.rect.top < settings.HEIGHT*2: 
                 # walk
                 diffX = self.hsp 
                 diffY = self.vsp                 
@@ -245,6 +238,13 @@ class Boss(Enemy):
                 self.offsetX += X 
                 self.offsetY += Y 
                 
+                # check which side hit
+                self.rect_up = pygame.Rect(self.rect.topleft, (self.rect.topright[0] - self.rect.topleft[0],1))
+                self.rect_down = pygame.Rect(self.rect.bottomleft, (self.rect.bottomright[0] - self.rect.bottomleft[0],1))
+                self.rect_right = pygame.Rect(self.rect.topright, (1,self.rect.bottomright[1] - self.rect.topright[1]))
+                self.rect_left = pygame.Rect((self.rect.topleft[0], self.rect.topleft[1]),
+                                            (1,self.rect.bottomleft[1] - self.rect.topleft[1]))         
+                                       
                 # shoot create
                 self.fire_counter += 1
                 if self.fire_counter > self.fire_delay:
@@ -265,7 +265,14 @@ class Boss(Enemy):
                     fire_list.add(fire)
                     fire.shoot()
                     self.fire_counter = 0 
-                    
+                                       
+                # draw life bar
+                rect = pygame.Rect(self.rect.left, self.rect.top-15, self.rect.width, 13)  
+                life_rect = pygame.Rect(self.rect.left+2, self.rect.top-13,
+                                        int((self.rect.width*self.life)/self.max_life)-4, 8)      
+                pygame.draw.rect(settings.screen, 'gray', rect)
+                pygame.draw.rect(settings.screen, 'red', life_rect) 
+                              
             # animate     
             if self.side == 'left':       
                 self.walk_animation_index,self.walk_count = self.animation(self.walk,
@@ -276,21 +283,13 @@ class Boss(Enemy):
                 self.walk_animation_index,self.walk_count = self.animation(self.walk_flip,
                                                 self.walk_flip_masks, self.walk_delay,
                                                 self.walk_animation_index, self.walk_count)
-                self.hsp = 1
+                self.hsp = 1  
             
             #check if is close enough
-            if abs(self.rect.center[0] - player.rect.center[0]) < 50: self.hsp = 0        
-        
+            if abs(self.rect.center[0] - player.rect.center[0]) < 50: self.hsp = 0  
             self.onground = self.check_collision(0, 1, boxes, "UP")
             self.onceil = self.check_collision(0, -1, boxes, "DOWN")  
-            self.check_gravity() 
-            
-            # draw life bar
-            rect = pygame.Rect(self.rect.left, self.rect.top-15, self.rect.width, 13)  
-            life_rect = pygame.Rect(self.rect.left+2, self.rect.top-13,
-                                    int((self.rect.width*self.life)/self.max_life)-4, 8)      
-            pygame.draw.rect(settings.screen, 'gray', rect)
-            pygame.draw.rect(settings.screen, 'red', life_rect)                  
+            self.check_gravity()             
         
         self.draw(settings.screen)
         
