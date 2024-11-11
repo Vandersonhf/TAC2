@@ -35,12 +35,12 @@ class Sprite(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.rect.center)  
         #self.rect = self.image.get_rect(midbottom=self.rect.midbottom)      
         self.mask = masks[index] 
-        # inflate image + or -
+        # inflate image + or -        
         if inflate != 0 and self.rect.size[0] > 1:
             old = self.rect.center
-            self.rect = self.rect.inflate(inflate, inflate)            
-            self.image = pygame.transform.scale(self.image, self.rect.size)   
-            self.rect.center = old
+            self.rect = self.rect.inflate(inflate, inflate)
+            self.rect.center = old            
+            self.image = pygame.transform.scale(self.image, self.rect.size)               
         # counting in circle  
         counter += 1
         if index < len(images)-1:            

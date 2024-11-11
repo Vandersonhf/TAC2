@@ -18,7 +18,7 @@ class Editor():
         
         boss = pygame.transform.rotozoom(settings.boss[0], 0, 0.5)
         self.tile_list = settings.objects + settings.back + settings.back2 + settings.items + settings.enemies\
-                            +[boss]
+                            +[boss] + settings.pit_fire
         self.total_size = len(self.tile_list)
         
         self.text_count = 0     # count time on text appear

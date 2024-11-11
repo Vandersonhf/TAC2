@@ -1,6 +1,7 @@
 from .Sprite import Sprite
 from .Game import settings
 from .Player import Player
+from .Particles import ParticleRay
 import random
 import pygame
 
@@ -194,6 +195,7 @@ class Boss(Enemy):
         self.done_dead = False
         self.dead_counter = 0
         self.dead_delay = 100
+        self.particle_group = None
         
         self.rect_up = pygame.Rect(self.rect.topleft, (self.rect.topright[0] - self.rect.topleft[0],1))
         self.rect_down = pygame.Rect(self.rect.bottomleft, (self.rect.bottomright[0] - self.rect.bottomleft[0],1))
@@ -218,10 +220,20 @@ class Boss(Enemy):
             settings.play_sound(settings.sound_boss_dead)
             self.killed = True      
         if self.killed:
+            # ray - dead
+            if self.dead_counter == 30:
+                self.particle_group = pygame.sprite.Group()
+                pos = (self.rect.center[0], self.rect.center[1])    
+                direction = pygame.math.Vector2(0, 0) 
+                ParticleRay(self.particle_group, pos, 'white', direction, 0)
+            if self.particle_group:
+                self.particle_group.draw(settings.screen)
+                self.particle_group.update(settings.dt)
             _,self.dead_counter = self.animation([self.image],[self.mask], self.dead_delay,
                                                 0, self.dead_counter, -1)
             if self.dead_counter >= self.dead_delay: 
-                settings.play_sound(settings.sound_win)                
+                settings.play_sound(settings.sound_win)
+                player.speak("Wohoou!!!")                
                 self.kill()         
         else:  
             # check facing side          

@@ -1,7 +1,7 @@
 import pygame
 from .Settings import *
 from .Player import Player
-from .Objects import FixObj, AniObj
+from .Objects import FixObj, AniObj, FirePit
 from .Enemy import Mob1, Boss
 from .Editor import Editor
 from .Particles import NiceEffect
@@ -32,6 +32,7 @@ class Jackson():
     def new_game (self):
         # Ocultando o cursor 
         pygame.mouse.set_visible(False)
+        #pygame.event.pump()
         
         while True:                             # laço externo do game over
             # Configurando o começo do jogo.
@@ -55,15 +56,22 @@ class Jackson():
             self.background = pygame.sprite.Group()
             self.items = pygame.sprite.Group()
             self.coins = pygame.sprite.Group()
-            self.enemies = pygame.sprite.Group()      
+            self.enemies = pygame.sprite.Group() 
+            #self.fire_pit = pygame.sprite.Group() 
+            self.fire_pit = []    
             self.boss_fire_list = pygame.sprite.Group()  
                     
             #load map and get boundary limits
             self.map_size = self.open_map()
             
             #boom = NiceEffect()
+            #boom.rays(self.cenario, self.cenario_rect)
+            #boom.sparks(self.cenario, self.cenario_rect)
             #boom.fireworks1(self.cenario, self.cenario_rect)
             #boom.fireworks(self.cenario, self.cenario_rect)
+            #boom.light()
+            #boom.light2()
+            #boom.fire()
             
             self.main_loop()
             
@@ -77,9 +85,8 @@ class Jackson():
    
     def main_loop(self):
         # main game loop
-        while True:
-            #pygame.event.pump()
-
+        while True:          
+            settings.dt = settings.clock.tick(settings.fps) / 1000 
             # Draw loop      
             settings.screen.blit(self.cenario, self.cenario_rect) 
             
@@ -93,12 +100,15 @@ class Jackson():
             hazard = pygame.sprite.Group()
             hazard.add(self.enemies)
             hazard.add(self.boss_fire_list)
+            #hazard.add(self.fire_pit)
                             
             # updates in memory 
             self.ground.update()              
             self.items.update(self.cenario_rect) 
             self.coins.update(self.cenario_rect)            
             self.enemies.update(solid, self.cenario_rect, self.player, self.boss_fire_list)
+            #self.fire_pit.update(self.cenario_rect)
+            for p in self.fire_pit: p.update(self.cenario_rect)
             if self.boss_fire_list: self.boss_fire_list.update(self.cenario_rect, self.ground, self.items)
             self.cenario_rect = self.player.update(self.ground, hazard, self.cenario_rect, loot)
                   
@@ -108,7 +118,7 @@ class Jackson():
             #update screen
             #pygame.display.flip()
             pygame.display.update()
-            settings.clock.tick(settings.fps)            
+            #settings.clock.tick(settings.fps)            
             if not self.cenario_rect: return
             if len(self.enemies) == 0: return   #WIN
     
@@ -116,9 +126,11 @@ class Jackson():
     def draw_panel(self):
         # blit panel
         self.blit_text(f'PLAYER: Zé', settings.fonte, settings.screen, 10, 10)
-        self.blit_text(f'Kill all enemies to win!', settings.fonte, settings.screen, 350, 50)
-        self.blit_text(f'CTRL:run,SPACE:shoot,M:on/off music,ESC:exit,F5:save,F6:load',
+        self.blit_text(f'Kill all enemies to win!', settings.fonte, settings.screen, 350, 90)
+        self.blit_text(f'CTRL:run,SPACE:shoot,M:on/off music',
                         settings.fonte, settings.screen, 350, 10)
+        self.blit_text(f'ESC:exit,F5:save,F6:load',
+                        settings.fonte, settings.screen, 350, 50)
         settings.screen.blit(settings.coin[0], pygame.Rect(0,50,settings.base_tile,settings.base_tile))
         self.blit_text(f'x : {self.player.score}', settings.fonte, settings.screen, 50, 60)             
         cor = VERDE
@@ -153,7 +165,7 @@ class Jackson():
         max_y = 0   # y = lin
         t = settings.tile
         tile_list = [settings.objects, settings.back, settings.back2, settings.items, settings.enemies,\
-                        [settings.boss[0]]]
+                        [settings.boss[0]], settings.pit_fire]
         map = self.get_tile_type_map(tile_list)
         try:
             with open('Jackson/save.txt','r') as save_file:                           
@@ -214,6 +226,12 @@ class Jackson():
                         obj = Boss()
                         obj.rect = pygame.Rect(gx*t, gy*t, t, t)                        
                         self.enemies.add(obj)
+                elif idx == 6:      # fire pit 
+                    if item == 0:
+                        obj = FirePit((gx*t, gy*t),t)
+                        #obj.rect = pygame.Rect(gx*t, gy*t, t, t) 
+                        self.fire_pit.append(obj) 
+                        #self.cenario.blit(obj.image, obj.rect.topleft)
                 if obj: 
                     if gx > max_x : max_x = gx
                     if gy > max_y : max_y = gy

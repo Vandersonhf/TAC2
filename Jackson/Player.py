@@ -3,8 +3,8 @@ from .Sprite import Sprite
 from pygame.locals import *
 from .Game import settings
 from .SQL import sql_request, sql_update
-import sys
-import random
+from .Particles import ParticleSpark
+import random, math, sys
 
 class Player(Sprite):
     def __init__(self, startx, starty):
@@ -65,7 +65,7 @@ class Player(Sprite):
         self.prev_key = pygame.key.get_pressed()
         self.orbs = pygame.sprite.Group() 
         self.orb_counter = 0
-        self.orb_delay = 20
+        self.orb_delay = 40
         
         #score
         self.score = 0
@@ -76,6 +76,11 @@ class Player(Sprite):
         self.hit_delay = 50
         self.text_count = 0
         self.message = ""
+        
+        # speak
+        self.speak_delay = 100
+        self.speak_count = 0
+        
                 
 
     def update(self, boxes, enemies, cenario_rect:pygame.Rect, items):
@@ -106,8 +111,21 @@ class Player(Sprite):
         self.adjust_move(self.hsp, self.vsp, boxes)
         cenario_rect = self.check_virtual_hard_limits(cenario_rect, boxes)
         self.draw(settings.screen)
+        
+        # speak update
+        if self.speak_count != 0:
+            self.speak_count += 1
+            if self.speak_count < self.speak_delay:
+                self.sp.update(self.rect.right, self.rect.top)
+            else: self.speak_count = 0
+        
         return cenario_rect
     
+    
+    def speak(self, text):
+        self.sp = Speak(self.rect.left, self.rect.bottom, 100,60,text)
+        self.speak_count += 1
+        
     
     def collide_item(self, items):
         box = []
@@ -361,6 +379,7 @@ class Player(Sprite):
                         fire.direction_left = -1                   
                     self.orbs.add(fire)
                     settings.play_sound(settings.sound_fire)
+                    #self.speak("Wohoou!!!")  
             # save game
             if (event.type == KEYDOWN and event.key == K_F5): 
                     sql_update(self.score, self.life)
@@ -404,15 +423,24 @@ class Player(Sprite):
                 self.walk_animation(self.walk_cycle, self.walk_cycle_masks,self.walk_delay)
             self.hsp = self.speed                       
         elif self.vsp == 0 and self.hsp == 0:            
-            #DANCE!!!
+            #DANCE!!! 
+            if self.count_idle == 0: 
+                settings.particle_group.empty()
             self.count_idle += 1
-            if self.count_idle > self.idle:
-                #settings.play_sound(settings.sound_fire) 
+            if self.count_idle > self.idle:                
                 self.vsp = 0    # dont move on box edges               
                 if self.facing_left:
                     self.stand_animation(self.stand_cycle_flip, self.stand_cycle_flip_masks, self.stand_delay)                    
                 else:                    
                     self.stand_animation(self.stand_cycle, self.stand_cycle_masks,self.stand_delay)
+            # shine  
+            if self.count_idle % 30 == 0: 
+                pos = (self.rect.center[0] + random.randint(0,100), self.rect.center[1] + random.randint(0,100))    
+                direction = pygame.math.Vector2(random.uniform(0,0), random.uniform(-1,0))  
+                direction = direction.normalize()    
+                ParticleSpark(settings.particle_group, pos, 'white', direction, 15)
+            settings.particle_group.draw(settings.screen)
+            settings.particle_group.update(settings.dt)
                              
         #jump
         if key[pygame.K_UP] and self.onground:
@@ -519,7 +547,7 @@ class Player(Sprite):
         # for fun
         light = settings.dance[0]
         rect = light.get_rect()
-        rect.bottom = self.rect.bottom +30
+        rect.bottom = self.rect.bottom + 30
         rect.centerx = self.rect.centerx
         settings.screen.blit(light, rect)
         #dance 
@@ -542,58 +570,8 @@ class Player(Sprite):
         self.mask = masks[index]   
         
         self.jump_animation_index = index
-        
-        
-        
-"""class Fire(Sprite):
-    '''Firing while holding key'''
-    def __init__(self, startx=0, starty=0):
-        super().__init__(settings.fire[0], settings.fire_masks[0], startx, starty)
-        
-        self.fire = settings.fire
-        self.fire_masks = settings.fire_masks
-        self.fire_flip = settings.fire_flip
-        self.fire_flip_masks = settings.fire_flip_masks
-        
-        self.fire_animation_index = 0
-        self.fire_count = 0  
-        self.fire_delay = 20
-        self.fire_sound_counter = 0 
-        self.active = False
-                    
-    
-    def set(self, x, y):
-        #self.rect.center = [x, y]  
-        self.rect = self.image.get_rect(center=(x,y))
-        
-    def on(self):
-        self.active = True
-        
-    def off(self):
-        self.active = False
-            
-    def fire_animation(self, flip=False):
-        '''Enter with surface list and its masks
-        plus max delay to change surface
-        '''
-        if flip:
-            self.fire_animation_index,self.fire_count = self.animation(self.fire_flip,
-                                            self.fire_flip_masks, self.fire_delay,
-                                            self.fire_animation_index, self.fire_count)
-        else:
-            self.fire_animation_index, self.fire_count = self.animation(self.fire,
-                                            self.fire_masks, self.fire_delay,
-                                            self.fire_animation_index, self.fire_count)
-        #play sound - start of cycle        
-        if self.fire_sound_counter == 0:
-            settings.play_sound(settings.sound_fire)
-        self.fire_sound_counter += 1
-        if self.fire_sound_counter > self.fire_delay*len(self.fire):
-            self.fire_sound_counter = 0 
-        #draw
-        self.draw(settings.screen)"""
-        
-
+       
+  
 
 class FireOrb(Sprite):
     """Firing while holding key"""
@@ -633,3 +611,43 @@ class FireOrb(Sprite):
                
         #draw
         self.draw(settings.screen)
+        
+        
+        
+class Speak(): 
+    def __init__(self, x, y, w, h, text='', font=24, color=(0,0,0)):        
+        self.w = w
+        self.h = h
+        
+        # Create a surface 
+        self.surf = pygame.Surface((w, h))
+        self.surf.set_colorkey((0,0,0))
+        
+        # Create a font object
+        font = pygame.font.Font(None, font)
+        
+        # Render text
+        self.text = font.render(text, True, color)
+        self.text_rect = self.text.get_rect(center=(self.surf.get_width()/2,
+                                                    self.surf.get_height()/2-10))
+
+        # Create a pygame.Rect object 
+        self.rect = pygame.Rect(x, y, w, h)  # Adjust the position as needed
+        
+        
+    def update(self, x, y):
+        self.rect.bottomleft = (x,y)
+        # draw text balloon
+        pygame.draw.rect(self.surf, "white", (0, 0, self.w, self.h-10))
+        #pygame.draw.rect(self.surf, "white", (1, 1, self.w-2, self.h-2-10))        
+        pygame.draw.polygon(self.surf, "white", [(10,self.h-10),(5,self.h),(15,self.h-10),(10,self.h-10)]) 
+        #pygame.draw.arc(self.surf, "black", [0,0,10,10], math.pi/2, math.pi)
+        #pygame.draw.arc(self.surf, "black", [self.w,0,10,10], 0, math.pi/2)
+        #pygame.draw.arc(self.surf, "black", [0,self.h-10,10,10], math.pi, 3*math.pi/2)
+        #pygame.draw.arc(self.surf, "black", [self.w,self.h-10,10,10], 3*math.pi/2, 0)              
+    
+        # Show the text
+        self.surf.blit(self.text, self.text_rect)
+        
+        # Draw on the screen
+        settings.screen.blit(self.surf, (self.rect.x, self.rect.y))

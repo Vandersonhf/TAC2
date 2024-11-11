@@ -23,6 +23,8 @@ class Settings:
         self.screen = pygame.display.set_mode(self.disp_size)
         pygame.display.toggle_fullscreen()
         self.clock = pygame.time.Clock()
+        self.dt = 0
+        self.particle_group = pygame.sprite.Group()
                 
         # Configurando a fonte.        
         self.font_size = 48 
@@ -86,6 +88,13 @@ class Settings:
         w = [self.base_tile] * len(left)
         h = [self.base_tile] * len(left)
         self.items, self.items_mask = self.cut_sub_surface(full_items, left, top, w, h, self.factor_tile)
+          
+        # fire pit
+        left = [96]
+        top = [144]
+        w = [16] * len(left)
+        h = [16] * len(left)
+        self.pit_fire, self.pit_fire_masks = self.cut_sub_surface(full_items, left, top, w, h, self.factor_tile)  
           
         #boss fire
         left = [100,100]

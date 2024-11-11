@@ -1,7 +1,54 @@
 from .Sprite import Sprite
 from .Game import settings
-import pygame
+import pygame, random
 
+
+class FirePit():
+    def __init__(self, pos:list[int], size:int):        
+        self.particles = []
+        self.pos = pos
+        self.size = size
+        self.rect_init = None
+        self.count = 0
+        self.delay = 2
+    
+    def update(self, cenario_rect=None): 
+        self.count += 1
+        x = self.pos[0] + cenario_rect.left
+        y = self.pos[1] + cenario_rect.top
+        #if self.count >= self.delay:                       
+            # check movement in screen only - see ahead?
+        if x > -100 and x < settings.WIDTH+100 \
+                and y > -100 and y < settings.HEIGHT+100:
+            self.particles.append([[random.randint(x, x+self.size), y],  # pos
+                                    [random.randint(0,20)/10-1, -4],    # vel
+                                    random.randint(8,12)])            # size
+            #self.count = 0
+        color = random.choice(("red", "yellow", "orange"))
+        for p in self.particles:
+            p[0][0] += p[1][0]   # vel 
+            p[0][1] += p[1][1] 
+            p[2] -= 0.4
+            dx = int(p[0][0])
+            dy = int(p[0][1]) + settings.tile
+            pygame.draw.circle(settings.screen, color, [dx, dy], int(p[2]))
+            
+            # light
+            radius = p[2] * 2
+            settings.screen.blit(self.circle_surf(radius, (150,20,20)), 
+                                    (dx-radius, dy-radius), special_flags=pygame.BLEND_RGB_ADD)
+            
+            if p[2] <= 0:
+                self.particles.remove(p)
+    
+    
+    def circle_surf(self, radius, color):
+        surf = pygame.Surface((radius * 2, radius * 2))
+        surf.set_colorkey((0,0,0))
+        pygame.draw.circle(surf, color, (radius, radius), radius)
+        return surf
+        
+        
 
 class FixObj(Sprite):
     def __init__(self, surf, mask=None, startx=0, starty=0):
