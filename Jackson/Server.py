@@ -1,13 +1,13 @@
 import socket
-
+SIZE = 1024
 
 class AppServer:
     def __init__(self, host, port):        
         self.host = host
         self.port = port
-
-    def receive(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    def receive_send(self):        
         self.socket.bind((self.host, self.port))
         self.socket.listen(1)
         print('Server up!')
@@ -15,19 +15,16 @@ class AppServer:
             conn, address = self.socket.accept()
             print(f'received connection from {address}')
             with conn:
-                data = conn.recv(128)
+                #receive data
+                data = conn.recv(SIZE)
                 message = data.decode()
-                print(message)
-                server.send("OLA")
-                break
-    
-    def send(self, message):      
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)      
-        #with self.socket:
-        self.socket.connect((self.host, self.port+1))
-        print("conectado socket 2")
-        self.socket.send(message.encode())                
-
+                print("received ",message)
+                
+                # send answer
+                answer = "OLA"
+                conn.send(answer.encode())
+                print("answer sent! ", answer)
+                
 
 server = AppServer("localhost", 5041)
-server.receive()
+server.receive_send()
