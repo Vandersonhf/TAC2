@@ -223,16 +223,23 @@ class ParticleSpark(pygame.sprite.Sprite):
         self.speed = speed
         self.alpha = 255
         self.fade_speed = 300
-        self.size = 100
+        self.size = 150
         self.fade_count = 0
         self.fade_delay = 30
-        self.inflate_speed = 100
+        self.inflate_speed = 200
         self.factor = 10
+        #self.rect = None
         
         self.create_surf()
         
     def create_surf(self):
-        self.image = pygame.Surface((self.size, self.size)).convert_alpha()
+        #if self.rect: self.rect_old = self.rect
+        #else: self.rect_old = (self.pos, self.pos)
+        try:
+            self.image = pygame.Surface((self.size, self.size)).convert_alpha()
+        except: 
+            self.kill()
+            return
         self.image.set_colorkey("black")
         R = 255
         G = 255
@@ -262,53 +269,60 @@ class ParticleSpark(pygame.sprite.Sprite):
                     G = 0
                     B = 0
                 pygame.draw.circle(self.image, (R,G,B), (self.size/self.factor+x, self.size/self.factor+y), 1)                 
-        self.rect = self.image.get_rect(center=self.pos)
+        self.rect = self.image.get_rect(center = self.pos)
     
-    def check_pos(self):
+    '''def check_pos(self):
         if (
             self.pos[0] < -50 or
             self.pos[0] > settings.WIDTH + 50 or
             self.pos[1] < -50 or
             self.pos[1] > settings.HEIGHT + 50
         ):
-            self.kill()
+            self.kill()'''
     
     def move(self, dt):
         self.pos += self.direction * self.speed * dt
         self.rect.center = self.pos        
         
-    def fade(self, dt):
+    '''def fade(self, dt):
         self.alpha -= self.fade_speed * dt
         self.image.set_alpha(self.alpha)
     
     def check_alpha(self):
         if self.alpha <= 0: 
-            self.kill()
+            self.kill()'''
         
-    def inflate(self, dt):
+    '''def inflate(self, dt):
         self.size += self.inflate_speed * dt
-        self.create_surf()
+        self.create_surf()'''
         
     def deflate(self, dt):
-        if self.rect.size[0] > 1:            
+        self.size -= int(self.inflate_speed * dt)
+        if self.size <= 2:
+            self.kill()
+        self.create_surf()
+        #self.rect = self.rect.inflate(-1, -1)
+        #self.image = pygame.transform.scale(self.image, self.rect.size)
+        '''if self.rect.size[0] > 1:            
             self.size -= self.inflate_speed * dt
             if self.rect.size[0] > 10 and self.rect.size[1] > 10:
                 self.create_surf()
-            else: self.kill()
+            else: self.kill()'''
     
-    def check_size(self):
+    '''def check_size(self):
         if self.size < 1:
-            self.kill()
+            self.kill()'''
     
     def update(self, dt):       
-        self.move(dt)        
-        self.check_pos()
+        self.move(dt)     
+        self.deflate(dt)   
+        #self.check_pos()
         
-        self.fade_count += 1
+        '''self.fade_count += 1
         if self.fade_count > self.fade_delay:
             self.fade(dt)
-            self.check_alpha()           
-            self.check_size()
+            self.check_alpha()     '''      
+        #self.check_size()
        
         # light
         #radius = self.size/self.factor       

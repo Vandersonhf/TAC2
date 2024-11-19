@@ -18,10 +18,11 @@ class Settings:
     def setup(self, debug:bool):        
         self.debug = debug
         pygame.init()
-        self.WIDTH, self.HEIGHT = pygame.display.get_desktop_sizes()[0]
+        #self.WIDTH, self.HEIGHT = pygame.display.get_desktop_sizes()[0]
+        self.WIDTH, self.HEIGHT = (700,600)
         self.disp_size = (self.WIDTH, self.HEIGHT)
         self.screen = pygame.display.set_mode(self.disp_size)
-        pygame.display.toggle_fullscreen()
+        #pygame.display.toggle_fullscreen()
         self.clock = pygame.time.Clock()
         self.dt = 0
         self.particle_group = pygame.sprite.Group()
@@ -38,6 +39,14 @@ class Settings:
         self.tile = self.base_tile * self.factor_tile        
         self.map_lin = 100
         self.map_col = 300
+        self.client = False
+        self.server = False
+        self.client_socket = None
+        self.server_socket = None
+        self.multiplayer = False
+        self.buffer = []
+        self.buffer_max = 100
+        self.event_p2 = []
         
         # warp XY        
         self.warp_left = 0

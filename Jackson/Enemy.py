@@ -334,9 +334,12 @@ class Fire(Enemy):
         if self.life <= 0: self.kill()
         
         # hit items
-        for item in items:            
-            if self.rect.colliderect(item.rect):
-                self.kill()
+        for item in items:
+            if item.idx == 3 and item.type == 1:
+                pass    # not coin
+            else:            
+                if self.rect.colliderect(item.rect):
+                    self.kill()
         # hit box
         for box in boxes:            
             if self.rect.colliderect(box.rect):
