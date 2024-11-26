@@ -52,6 +52,9 @@ class Settings:
         self.size = 30
         self.sep = '|'
         self.client_connected = False
+        self.item_id = 1
+        self.enemy_id = 1
+        self.fire_dmg = 20
         
         # warp XY        
         self.warp_left = 0

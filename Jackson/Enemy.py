@@ -9,6 +9,9 @@ class Enemy(Sprite):
     def __init__(self, surf, mask, startx=0, starty=0):
         super().__init__(surf, mask, startx, starty)
         
+        self.id = settings.enemy_id
+        settings.enemy_id += 1
+        
         # general        
         self.gravity = 3
         self.direction_left = 1

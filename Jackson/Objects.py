@@ -75,6 +75,8 @@ class AniObj(Sprite):
     def __init__(self, surfs, masks, idx, type, depleted=None, startx=0, starty=0):
         super().__init__(surfs[0], masks[0], startx, starty)
         
+        self.id = settings.item_id
+        settings.item_id += 1
         self.surfs = surfs
         self.masks = masks
         self.idx = idx

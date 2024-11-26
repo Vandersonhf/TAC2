@@ -135,6 +135,9 @@ class Player(Sprite):
     def speak(self, text):
         self.sp = Speak(self.rect.left, self.rect.bottom, 100,60,text)
         self.speak_count += 1
+        if settings.multiplayer and settings.client_connected:
+            message = '' 
+            self.create_message('speak'+settings.sep, message)
     
     
     def collide_item(self, items):
@@ -158,6 +161,9 @@ class Player(Sprite):
                                 box.index(item)
                                 box.remove(item)
                             except ValueError: pass
+                            if settings.multiplayer and settings.client_connected:
+                                message = f'{item.id}' 
+                                self.create_message('brick'+settings.sep, message)
                         self.rect.move_ip([-self.hsp, -self.vsp])
                 # BOX                     
                 if item.idx == 3 and item.type == 0:
@@ -191,16 +197,21 @@ class Player(Sprite):
                                 if settings.multiplayer and settings.client_connected:
                                     message = f'{self.life}' 
                                     self.create_message('life'+settings.sep, message)
+                            if settings.multiplayer and settings.client_connected:
+                                    message = f'{item.id}'+settings.sep+f'{select}' 
+                                    self.create_message('box'+settings.sep, message)
                     self.rect.move_ip([-self.hsp, -self.vsp])                  
                 # COIN
                 if item.idx == 3 and item.type == 1:
                     if self.rect.colliderect(item.rect):
                         settings.sound_coin.play()
                         self.score += 1
-                        item.kill()
-                        if settings.multiplayer and settings.client:
+                        item.kill()                        
+                        if settings.multiplayer and settings.client_connected:
                             message = f'{self.score}' 
                             self.create_message('score'+settings.sep, message)
+                            message = f'{item.id}' 
+                            self.create_message('coin'+settings.sep, message)
         return box
     
     
@@ -302,7 +313,7 @@ class Player(Sprite):
                                 self.rect.collidepoint((enemy.rect.right, enemy.rect.centery)):                        
                                 #self.hsp = -int(self.jumpspeed)    # kick
                                 self.life -= 10 
-                                if self.life <=0:
+                                if self.life <= 0:
                                     self.life = 0
                                     self.image = settings.dead[0]
                                     self.rect = self.image.get_rect(midbottom=self.rect.midbottom)
@@ -314,7 +325,7 @@ class Player(Sprite):
                                     self.hit_counter = 0
                                 if settings.multiplayer and settings.client_connected:
                                     message = f'{self.life}' 
-                                    self.create_message('life|', message)
+                                    self.create_message('life'+settings.sep, message)
                             else:
                                 #stomp kill
                                 if not self.hit and enemy.ID == 1:
@@ -322,6 +333,9 @@ class Player(Sprite):
                                         self.vsp = -int(self.jumpspeed-self.speed)
                                         enemy.killed = True
                                         settings.play_sound(settings.sound_stomp)
+                                        if settings.multiplayer and settings.client_connected:
+                                            message = f'{enemy.id}' 
+                                            self.create_message('mob1'+settings.sep, message)
                     
     
     def fire_enemy(self, enemies:pygame.sprite.Group, boxes, items):
@@ -349,7 +363,10 @@ class Player(Sprite):
                         collide = orb.mask.overlap(enemy.mask, offset) 
                         if collide:
                             orb.kill()
-                            enemy.life -= 20
+                            enemy.life -= settings.fire_dmg
+                            if settings.multiplayer and settings.client_connected:
+                                message = f'{enemy.id}' 
+                                self.create_message('fire_hit'+settings.sep, message)
         
         
     def check_keys(self, ini_rect, cenario_rect):
@@ -788,6 +805,8 @@ class Player2(Player):
         #box = self.collide_item(items)
         #if len(box) > 0: boxes.add(box)
         
+        #self.check_items()
+        
         # movement - player 
         self.adjust_move(self.hsp, self.vsp, boxes)
         
@@ -833,8 +852,45 @@ class Player2(Player):
                 self.life = int(message_list[1])
             if message_list[0] == 'score':
                 self.score = int(message_list[1])
-                      
-        
+            if message_list[0] == 'brick':
+                settings.sound_break.play()
+                for item in items:
+                    if item.id == int(message_list[1]):
+                        item.image = item.depleted[0]
+                        item.dead = True
+                        item.dead_brick = True    
+            if message_list[0] == 'box':  
+                for item in items:
+                    if item.id == int(message_list[1]):
+                        select = int(message_list[2])                          
+                        settings.sound_bump.play()
+                        item.image = item.depleted[0]
+                        item.dead = True                             
+                        if select == 1: 
+                            # appear prize - coin
+                            settings.sound_coin.play()                                
+                        elif select == 2: 
+                            # appear prize - star
+                            settings.sound_life.play()                                
+                            item.star = True
+                        item.dead_box = True                   
+            if message_list[0] == 'coin':  
+                for item in items:
+                    if item.id == int(message_list[1]):            
+                        settings.sound_coin.play()
+                        item.kill()
+            if message_list[0] == 'mob1':  
+                for enemy in enemies:
+                    if enemy.id == int(message_list[1]): 
+                        enemy.killed = True
+                        settings.play_sound(settings.sound_stomp)
+            if message_list[0] == 'fire_hit':  
+                for enemy in enemies:
+                    if enemy.id == int(message_list[1]):
+                        enemy.life -= settings.fire_dmg
+            if message_list[0] == 'speak':
+                self.speak("Wohoou!!!")
+                    
         # multiplayer
         self.nb.update(self.rect.centerx, self.rect.top - 40)
           
@@ -897,7 +953,7 @@ class Player2(Player):
             # variable height jumping
             if (event == "jump"):
                 if self.vsp < -self.min_jumpspeed:
-                    self.vsp = -self.min_jumpspeed   
+                    self.vsp = -self.min_jumpspeed             
         #empty event list
         settings.event_p2 = []
         

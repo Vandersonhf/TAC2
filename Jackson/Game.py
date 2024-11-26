@@ -135,19 +135,15 @@ class Jackson():
             settings.screen.blit(self.cenario, self.cenario_rect) 
             
             if settings.multiplayer:
-                if settings.server:
-                    self.update_game()
-                    #print(settings.client_connected)
+                if settings.server:                    
                     if settings.client_connected:
-                        self.player2.update(self.ground, self.hazard, self.cenario_rect, self.loot)
-                    #print(self.player2.rect, self.player.rect)
+                        self.player2.update(self.ground, self.hazard, self.cenario_rect, self.loot)                    
                 if settings.client:
-                    # update cenario, players, items, etc.
-                    self.update_game()
+                    # update cenario, players, items, etc.                   
                     self.player2.update(self.ground, self.hazard, self.cenario_rect, self.loot)
                 self.draw_panel2()
-            else:   
-               self.update_game()
+                               
+            self.update_game()
                                         
             # Panel      
             self.draw_panel()          
@@ -179,7 +175,7 @@ class Jackson():
         # blit panel
         self.blit_text(f'PLAYER: Zé2', settings.fonte, settings.screen, settings.WIDTH-10, 10, pos='topright')
         settings.screen.blit(settings.coin[0], pygame.Rect(settings.WIDTH-120,90,settings.base_tile,settings.base_tile))
-        self.blit_text(f':{self.player2.score}', settings.fonte, settings.screen, settings.WIDTH-50, 100, pos='topright')             
+        self.blit_text(f':{self.player2.score}', settings.fonte, settings.screen, settings.WIDTH-80, 100, pos='topleft')             
         cor = VERDE
         if self.player2.life > 30 and self.player2.life < 70: cor = CORTEXTO2
         if self.player2.life <= 30: cor = CORTEXTO3
