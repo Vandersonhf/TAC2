@@ -43,10 +43,15 @@ class Settings:
         self.server = False
         self.client_socket = None
         self.server_socket = None
-        self.multiplayer = False
-        self.buffer = []
-        self.buffer_max = 100
+        self.multiplayer = False        
+        self.buffer_in = []
+        self.buffer_in_max = 100
+        #self.buffer_out = []
+        #self.buffer_out_max = 100
         self.event_p2 = []
+        self.size = 30
+        self.sep = '|'
+        self.client_connected = False
         
         # warp XY        
         self.warp_left = 0

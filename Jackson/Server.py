@@ -1,6 +1,5 @@
 import socket
 from .Game import settings
-SIZE = 1024
 
 class AppServer:
     def __init__(self, host, port):        
@@ -11,16 +10,19 @@ class AppServer:
     def server_listen(self):
         self.socket.bind((self.host, self.port))
         self.socket.listen(1)
-        #while True:
-        self.conn, address = self.socket.accept()
-        print(f'received connection from {address}')
-        with self.conn:
-            while True:
-                #receive data
-                data = self.conn.recv(SIZE)
-                message = data.decode()
-                if len(settings.buffer) < settings.buffer_max:
-                    settings.buffer.append(message)
+        while True:
+            self.conn, address = self.socket.accept()
+            print(f'received connection from {address}')
+            settings.client_connected = True
+            with self.conn:
+                while True:
+                    try:
+                        #receive data
+                        data = self.conn.recv(settings.size)
+                        message = data.decode()
+                        if len(settings.buffer_in) < settings.buffer_in_max:
+                            settings.buffer_in.append(message)
+                    except: break
     
     
     def send_message(self, message):
@@ -37,7 +39,7 @@ class AppServer:
             print(f'received connection from {address}')
             with conn:
                 #receive data
-                data = conn.recv(SIZE)
+                data = conn.recv(settings.size)
                 message = data.decode()
                 print("received ",message)
                 

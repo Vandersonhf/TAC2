@@ -106,7 +106,7 @@ class Jackson():
                 self.life_counter2 = 0
                 self.life_delay2 = 20
                 self.life_show2 = True
-                self.player2 = Player2(300, 450)
+                self.player2 = Player2(settings.WIDTH*0.1, (settings.map_lin-3)*settings.tile)
             
             #boom = NiceEffect()
             #boom.rays(self.cenario, self.cenario_rect)
@@ -137,12 +137,14 @@ class Jackson():
             if settings.multiplayer:
                 if settings.server:
                     self.update_game()
-                    self.player2.update(self.ground, self.hazard, self.cenario_rect, self.loot)
+                    #print(settings.client_connected)
+                    if settings.client_connected:
+                        self.player2.update(self.ground, self.hazard, self.cenario_rect, self.loot)
                     #print(self.player2.rect, self.player.rect)
                 if settings.client:
-                    pass
                     # update cenario, players, items, etc.
                     self.update_game()
+                    self.player2.update(self.ground, self.hazard, self.cenario_rect, self.loot)
                 self.draw_panel2()
             else:   
                self.update_game()

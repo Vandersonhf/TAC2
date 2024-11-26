@@ -1,6 +1,5 @@
 import socket
 from .Game import settings
-SIZE = 1024
 
 class AppClient:
     def __init__(self, host, port):        
@@ -8,22 +7,33 @@ class AppClient:
         self.port = port    
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)    
 
-    def connect_server(self):               
-        self.socket.connect((self.host, self.port))
-        self.conn = self.socket
+    def connect_server(self):     
+        try:          
+            self.socket.connect((self.host, self.port))
+            self.conn = self.socket
+            settings.client_connected = True
+        except Exception as E:
+            print("Could not connect to server:", E)
         
     def send_message(self, message):
-        data_string = message.encode()
-        self.conn.send(data_string)
+        data_bytes = message.encode()
+        self.conn.send(data_bytes)
         
+    '''def send_messages_buffer(self):
+        for message in settings.buffer_out:
+            self.send_message(message)
+        settings.buffer_out = []'''
+
     def receive_messages(self):
         with self.conn:
             while True:
-                #receive data
-                data = self.conn.recv(SIZE)
-                message = data.decode()
-                if len(settings.buffer) < settings.buffer_max:
-                    settings.buffer.append(message)
+                try:
+                    #receive data
+                    data = self.conn.recv(settings.size)
+                    message = data.decode()
+                    if len(settings.buffer_in) < settings.buffer_in_max:
+                        settings.buffer_in.append(message)
+                except: break
                     
 
     def send_receive(self, message):        
@@ -38,7 +48,7 @@ class AppClient:
         # receive aswer                  
         print(f"Received answer from {self.host}")
         with conn:
-            data = conn.recv(SIZE)
+            data = conn.recv(settings.size)
             answer = data.decode()
             print("server answer ",answer)
         

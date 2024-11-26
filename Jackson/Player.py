@@ -89,7 +89,7 @@ class Player(Sprite):
             
 
     def update(self, boxes, enemies, cenario_rect:pygame.Rect, items):               
-        old_pos = cenario_rect
+        #old_pos = cenario_rect
         self.hsp = 0    # horizontal speed               
         self.onground = self.check_collision(0, 1, boxes, "UP")
         self.onceil = self.check_collision(0, -1, boxes, "DOWN")
@@ -97,15 +97,15 @@ class Player(Sprite):
         #gravity and keys
         self.check_gravity()   
         # check movement - initial and orbs 
-        left = self.rect.left-cenario_rect.left + settings.warp_left
-        top = self.rect.top-cenario_rect.top+20 + settings.warp_top
+        left = self.rect.left-cenario_rect.left 
+        top = self.rect.top-cenario_rect.top+20 
         ini_pos = [left, top]
         cenario_rect = self.check_keys(pygame.Rect(ini_pos,(self.rect.width, self.rect.height)), cenario_rect)
         self.orbs.update(cenario_rect)
         
         #collide enemy, items, etc
         dead = self.collide_enemy(enemies)
-        if self.rect.bottom + self.vsp > cenario_rect.bottom + settings.warp_top: dead = True
+        if self.rect.bottom + self.vsp > cenario_rect.bottom: dead = True
         if dead: 
             self.draw(settings.screen)
             return False
@@ -127,32 +127,7 @@ class Player(Sprite):
         
         # multiplayer
         if settings.multiplayer:
-            self.nb.update(self.rect.centerx, self.rect.top - 40)
-            #print(self.rect.centerx, self.rect.top - 10)
-            if settings.client:
-                if self.hsp != 0 and self.vsp != 0:
-                    message = str(self.rect.center[0])+'-'+str(self.rect.center[1])  
-                    self.create_message('move-', message)  
-                # read message buffer
-                if len(settings.buffer)>0:
-                    message:str = settings.buffer.pop(0)
-                    #print(message)
-                    message_list = message.split('-')
-                    # cenario
-                    if message_list[0] == 'cenario':
-                        cenario_rect.left = int(message_list[1])
-                        cenario_rect.top = int(message_list[2])
-                        cenario_rect.width = int(message_list[3])
-                        cenario_rect.height = int(message_list[4])
-                    # shoot
-                    if message_list[0] == 'shoot':
-                        settings.event_p2.append('shoot') 
-            # server side
-            if settings.server:
-                if old_pos != cenario_rect:
-                    message = str(cenario_rect.left)+'-'+str(cenario_rect.top) \
-                        +'-'+str(cenario_rect.width)+'-'+str(cenario_rect.height) 
-                    self.create_message('cenario-', message)    
+            self.nb.update(self.rect.centerx, self.rect.top - 40)              
         
         return cenario_rect
     
@@ -204,12 +179,18 @@ class Player(Sprite):
                                 settings.sound_coin.play()
                                 self.score += 1
                                 item.dead_box = True
+                                if settings.multiplayer and settings.client_connected:
+                                    message = f'{self.score}' 
+                                    self.create_message('score'+settings.sep, message)
                             elif select == 2: 
                                 # appear prize - star
                                 settings.sound_life.play()
                                 self.life += 10
                                 item.star = True
                                 item.dead_box = True
+                                if settings.multiplayer and settings.client_connected:
+                                    message = f'{self.life}' 
+                                    self.create_message('life'+settings.sep, message)
                     self.rect.move_ip([-self.hsp, -self.vsp])                  
                 # COIN
                 if item.idx == 3 and item.type == 1:
@@ -217,10 +198,15 @@ class Player(Sprite):
                         settings.sound_coin.play()
                         self.score += 1
                         item.kill()
+                        if settings.multiplayer and settings.client:
+                            message = f'{self.score}' 
+                            self.create_message('score'+settings.sep, message)
         return box
     
     
-    def check_virtual_hard_limits(self, cenario_rect, boxes):    
+    def check_virtual_hard_limits(self, cenario_rect, boxes):
+        top = cenario_rect.top
+        left = cenario_rect.left    
         #move cenario when off virtual camera limits - check right side
         if self.rect.right > self.rect_left.left and cenario_rect.right > settings.WIDTH: 
             dx = self.rect.right - self.rect_left.left
@@ -265,7 +251,7 @@ class Player(Sprite):
                 cenario_rect.move_ip([0, -dy])
             for box in boxes:
                 box.rect.move_ip([0, -dy])
-                        
+                                       
         #all sides- dont go out of screen
         right = self.rect.right > settings.WIDTH
         left = self.rect.left < 0
@@ -326,6 +312,9 @@ class Player(Sprite):
                                     settings.sound_hit.play()                                
                                     self.hit = True
                                     self.hit_counter = 0
+                                if settings.multiplayer and settings.client_connected:
+                                    message = f'{self.life}' 
+                                    self.create_message('life|', message)
                             else:
                                 #stomp kill
                                 if not self.hit and enemy.ID == 1:
@@ -388,19 +377,15 @@ class Player(Sprite):
                 self.count_idle = 0  
                 if settings.multiplayer and settings.client:
                     message = '' 
-                    self.create_message('face_left-', message)
+                    self.create_message('face_left'+settings.sep, message)
             if (event.type == KEYDOWN and event.key == K_RIGHT):
                 self.facing_left = False
                 self.count_idle = 0    
                 if settings.multiplayer and settings.client:
                     message = '' 
-                    self.create_message('face_right-', message)                         
+                    self.create_message('face_right'+settings.sep, message)                         
             # shoot orb
-            if (event.type == KEYDOWN and event.key == K_SPACE):                 
-                # socket message
-                if settings.multiplayer and settings.client:
-                    message = '' 
-                    self.create_message('shoot-', message)          
+            if (event.type == KEYDOWN and event.key == K_SPACE): 
                 self.count_idle = 0 
                 if self.orb_counter > self.orb_delay:
                     self.orb_counter = 0               
@@ -419,6 +404,10 @@ class Player(Sprite):
                         fire.direction_left = -1                   
                     self.orbs.add(fire)
                     settings.play_sound(settings.sound_fire)
+                    # socket message
+                    if settings.multiplayer and settings.client_connected:
+                        message = '' 
+                        self.create_message('shoot'+settings.sep, message)
             # save game
             if (event.type == KEYDOWN and event.key == K_F5): 
                     sql_update(self.score, self.life)
@@ -451,27 +440,19 @@ class Player(Sprite):
             self.rect = self.image.get_rect(midbottom=self.rect.midbottom)
             if settings.multiplayer and settings.client:
                     message = '' 
-                    self.create_message('down-', message) 
+                    self.create_message('down'+settings.sep, message) 
         elif key[pygame.K_LEFT]:
             self.facing_left = True
             self.count_idle = 0
             if self.onground:
                 self.walk_animation(self.walk_cycle_flip, self.walk_cycle_flip_masks, self.walk_delay)
-            self.hsp = -self.speed
-            # socket message
-            if settings.multiplayer and settings.client:
-                    message = '' 
-                    self.create_message('left-', message) 
+            self.hsp = -self.speed            
         elif key[pygame.K_RIGHT]:
             self.facing_left = False
             self.count_idle = 0
             if self.onground:
                 self.walk_animation(self.walk_cycle, self.walk_cycle_masks,self.walk_delay)
-            self.hsp = self.speed  
-            # socket message
-            if settings.multiplayer and settings.client:
-                    message = '' 
-                    self.create_message('right-', message)              
+            self.hsp = self.speed                         
         elif self.vsp == 0 and self.hsp == 0:            
             #DANCE!!! 
             if self.count_idle == 0: 
@@ -498,11 +479,7 @@ class Player(Sprite):
             self.count_idle = 0
             self.vsp = -self.jumpspeed
             settings.play_sound(settings.sound_jump)
-            # socket message
-            if settings.multiplayer and settings.client:
-                    message = '' 
-                    self.create_message('up-', message) 
-
+            
         #run
         if key[pygame.K_LCTRL] and self.onground:
             self.count_idle = 0
@@ -511,10 +488,7 @@ class Player(Sprite):
         # variable height jumping
         if self.prev_key[pygame.K_UP] and not key[pygame.K_UP]:
             if self.vsp < -self.min_jumpspeed:
-                self.vsp = -self.min_jumpspeed
-            if settings.multiplayer and settings.client:
-                    message = '' 
-                    self.create_message('jump-', message) 
+                self.vsp = -self.min_jumpspeed            
         self.prev_key = key
         
         # texto save game - avoid running too many times inside event for loop
@@ -522,16 +496,31 @@ class Player(Sprite):
             self.blit_text(f'{self.message}', settings.fonte, settings.screen, 
                               settings.WIDTH/2, settings.HEIGHT*0.2,
                                 100, 'center')
+        
+        # socket message - move
+        if settings.multiplayer and settings.client_connected:
+            if self.vsp != 0 or self.hsp != 0:
+                message = str(self.rect.center[0])+settings.sep+str(self.rect.center[1])+settings.sep+\
+                            str(cenario_rect.left)+settings.sep+str(cenario_rect.top)
+                self.create_message('move'+settings.sep, message)
                   
         return cenario_rect
     
     def create_message(self, code, message):
         # socket messages
         if settings.multiplayer:
-            if settings.client:                   
-                settings.client_socket.send_message(code+message)
+            if settings.client:                  
+                m = code+message+settings.sep
+                while len(m) < settings.size:
+                    m += '*'              
+                #print("Enviando mensagem ",m)
+                settings.client_socket.send_message(m)
             if settings.server:
-                settings.server_socket.send_message(code+message)
+                m = code+message+settings.sep
+                while len(m) < settings.size:
+                    m += '*'              
+                #print("Enviando mensagem ",m)
+                settings.server_socket.send_message(m)
     
 
     def blit_text(self, texto, fonte, janela, x, y, delay=0, pos='topleft'):
@@ -750,86 +739,32 @@ class Number():
                 
         
         
-class Player2(Sprite):
+class Player2(Player):
     def __init__(self, startx, starty):
-        super().__init__(settings.player_stand[0], settings.player_stand_masks[0], startx, starty)
+        super().__init__(startx, starty)
         
-        # jump
-        self.jump_cycle = settings.player_jump
-        self.jump_cycle_masks = settings.player_jump_masks
-        self.jump_cycle_flip = settings.player_jump_flip
-        self.jump_cycle_flip_masks = settings.player_jump_flip_masks
-        
-        #stand
-        self.stand_cycle = settings.player_stand
-        self.stand_cycle_masks = settings.player_stand_masks
-        self.stand_cycle_flip = settings.player_stand_flip
-        self.stand_cycle_flip_masks = settings.player_stand_flip_masks
-        
-        #walk       
-        self.walk_cycle = settings.player_walk
-        self.walk_cycle_masks = settings.player_walk_masks
-        self.walk_cycle_flip = settings.player_walk_flip
-        self.walk_cycle_flip_masks = settings.player_walk_flip_masks
-        
-        #attack
-        self.atk_cycle = settings.player_atk
-        self.atk_cycle_masks = settings.player_atk_masks
-        self.atk_cycle_flip = settings.player_atk_flip
-        self.atk_cycle_flip_masks = settings.player_atk_flip_masks
-                        
-        # index for changing image
-        self.walk_animation_index = 0
-        self.jump_animation_index = 0
-        self.stand_animation_index = 0        
-        
-        # counter for delay
-        self.walk_count = 0 
-        self.jump_count = 0 
-        self.stand_count = 0         
-        
-        self.facing_left = False
-        self.onground = False
-        #limits of player movement - change camera
-        self.rect_up = pygame.Rect((0,settings.HEIGHT*0.9), (settings.WIDTH,1))
-        self.rect_down = pygame.Rect((0,settings.HEIGHT*0.3), (settings.WIDTH,1))
-        self.rect_left = pygame.Rect((settings.WIDTH*0.5,0), (1,settings.HEIGHT))
-        self.rect_right = pygame.Rect((settings.WIDTH*0.3,0), (1,settings.HEIGHT))
-
-        self.speed = 5
-        self.jumpspeed = 14
-        self.vsp = 0        # vertical speed
-        self.hsp = 0
-        self.gravity = 4
-        self.min_jumpspeed = 3   
-        self.walk_delay = 12
-        self.stand_delay = 12  
-        self.idle = 20
-        self.count_idle = 0        
-        self.prev_key = pygame.key.get_pressed()
-        self.orbs = pygame.sprite.Group() 
-        self.orb_counter = 0
-        self.orb_delay = 40
-        
-        #score
-        self.score = 0
-        self.life = 100
-        self.max_life = 100
-        self.hit = False
-        self.hit_counter = 0
-        self.hit_delay = 50
-        self.text_count = 0
-        self.message = ""
-        
-        # speak
-        self.speak_delay = 100
-        self.speak_count = 0
-        
+        self.old_cenario = None
+            
         # player count
-        self.nb = Number(self.rect.centerx, self.rect.top - 40, 50,50, '2') 
+        if settings.multiplayer and settings.server:
+            self.nb = Number(self.rect.centerx, self.rect.top - 40, 50,50, '2')
+        if settings.multiplayer and settings.client:   
+            self.nb = Number(self.rect.centerx, self.rect.top - 40, 50,50, '1')
        
 
     def update(self, boxes, enemies, cenario_rect:pygame.Rect, items):
+        dtop = 0
+        dleft = 0
+        # correction position
+        if self.old_cenario:
+            if self.old_cenario[0] != cenario_rect.top or \
+                self.old_cenario[1] != cenario_rect.left:
+                    dtop = self.old_cenario[0] - cenario_rect.top
+                    dleft = self.old_cenario[1] - cenario_rect.left
+                    self.rect.top -= dtop
+                    self.rect.left -= dleft
+        self.old_cenario = (cenario_rect.top, cenario_rect.left)
+        
         self.hsp = 0    # horizontal speed               
         self.onground = self.check_collision(0, 1, boxes, "UP")
         self.onceil = self.check_collision(0, -1, boxes, "DOWN")
@@ -844,55 +779,67 @@ class Player2(Sprite):
         self.orbs.update(cenario_rect)
         
         #collide enemy, items, etc
-        dead = self.collide_enemy(enemies)
-        if self.rect.bottom + self.vsp > cenario_rect.bottom: dead = True
-        if dead: 
-            self.draw(settings.screen)
-            return False
-        self.fire_enemy(enemies, boxes, items) 
-        box = self.collide_item(items)
-        if len(box) > 0: boxes.add(box)
+        #dead = self.collide_enemy(enemies)
+        #if self.rect.bottom + self.vsp > cenario_rect.bottom: dead = True
+        #if dead: 
+        #    self.draw(settings.screen)
+        #    return False
+        #self.fire_enemy(enemies, boxes, items) 
+        #box = self.collide_item(items)
+        #if len(box) > 0: boxes.add(box)
         
         # movement - player 
         self.adjust_move(self.hsp, self.vsp, boxes)
         
         
         # read message buffer
-        if len(settings.buffer)>0:
-            message:str = settings.buffer.pop(0)
+        if len(settings.buffer_in)>0:
+            message:str = settings.buffer_in.pop(0)
             #print(message)
-            message_list = message.split('-')
-            # code 001 - move
+            message_list = message.split(settings.sep)
+            # code 001 - move       
+            old_center = (self.rect.center[0], self.rect.center[1])                   
             if message_list[0] == 'move':
-                self.rect.center = (int(message_list[1]), int(message_list[2]))
+                self.count_idle = 0
+                #print(message, message_list)
+                #print("p2 ", cenario_rect, self.rect.center)
+                p2x = int(message_list[1])
+                p2y = int(message_list[2])
+                cenario_left = int(message_list[3])
+                cenario_top = int(message_list[4])
+                # diff between cenario rects
+                dx = cenario_rect.left - cenario_left
+                dy = cenario_rect.top - cenario_top                
+                self.rect.center = (p2x + dx, p2y + dy)
+                # right
+                if self.rect.center[0] > old_center[0]:
+                    settings.event_p2.append('right')
+                # left
+                if self.rect.center[0] < old_center[0]:
+                    settings.event_p2.append('left')
+                # fix jump animation
+                if self.rect.center[1] < old_center[1]:
+                    self.vsp = 0
             # code 002 - shoot
             if message_list[0] == 'shoot':
                 settings.event_p2.append('shoot')
             if message_list[0] == 'face_left':
                 settings.event_p2.append('face_left')
             if message_list[0] == 'face_right':
-                settings.event_p2.append('face_right') 
-            if message_list[0] == 'right':
-                settings.event_p2.append('right')
-            if message_list[0] == 'left':
-                settings.event_p2.append('left')
+                settings.event_p2.append('face_right')             
             if message_list[0] == 'down':
-                settings.event_p2.append('down') 
-            if message_list[0] == 'up':
-                settings.event_p2.append('up') 
-            if message_list[0] == 'jump':
-                settings.event_p2.append('jump')            
+                settings.event_p2.append('down')   
+            if message_list[0] == 'life':
+                self.life = int(message_list[1])
+            if message_list[0] == 'score':
+                self.score = int(message_list[1])
+                      
         
         # multiplayer
         self.nb.update(self.rect.centerx, self.rect.top - 40)
           
         self.draw(settings.screen)
-        
-    
-    def speak(self, text):
-        self.sp = Speak(self.rect.left, self.rect.bottom, 100,60,text)
-        self.speak_count += 1
-    
+     
     
     def check_p2(self, ini_rect):
         """check player 2 message events"""        
@@ -907,7 +854,7 @@ class Player2(Sprite):
                 self.count_idle = 0                     
             # shoot orb
             if (event == "shoot"):
-                print("SHOOT")
+                #print("SHOOT")
                 self.count_idle = 0                                   
                 fire = FireOrb(ini_rect)
                 if self.facing_left: 
@@ -922,11 +869,11 @@ class Player2(Sprite):
                     fire.direction_left = -1                   
                 self.orbs.add(fire)
                 settings.play_sound(settings.sound_fire) 
-                print("done") 
+                #print("done") 
             #get down - handle press hold
             if (event == "down") and self.onground:
                 self.count_idle = 0
-                self.hsp = 0
+                #self.hsp = 0
                 if self.facing_left: self.image = settings.dead_flip[1]
                 else: self.image = settings.dead[1]
                 self.rect = self.image.get_rect(midbottom=self.rect.midbottom)
@@ -935,17 +882,17 @@ class Player2(Sprite):
                 self.count_idle = 0
                 if self.onground:
                     self.walk_animation(self.walk_cycle_flip, self.walk_cycle_flip_masks, self.walk_delay)
-                self.hsp = -self.speed
+                #self.hsp = -self.speed
             elif (event == "right"):
                 self.facing_left = False
                 self.count_idle = 0
                 if self.onground:
                     self.walk_animation(self.walk_cycle, self.walk_cycle_masks,self.walk_delay)
-                self.hsp = self.speed             
+                #self.hsp = self.speed             
             #jump
             if (event == "up") and self.onground:
                 self.count_idle = 0
-                self.vsp = -self.jumpspeed
+                #self.vsp = -self.jumpspeed
                 settings.play_sound(settings.sound_jump)
             # variable height jumping
             if (event == "jump"):
@@ -975,247 +922,4 @@ class Player2(Sprite):
                              
         
     
-        
-    def collide_item(self, items):
-        box = []
-        for item in items:
-            if abs(self.rect.top - item.rect.top) < 100:
-                # BRICK
-                if item.idx == 0 and item.type == 1:
-                    if not item.dead:
-                        if self.rect.colliderect(item.rect):
-                            box.append(item)
-                        self.rect.move_ip([self.hsp, self.vsp])
-                        if item.rect.collidepoint((self.rect.centerx, self.rect.top)) and self.vsp < 0:
-                        #if self.rect.collidepoint((item.rect.centerx, item.rect.bottom)) and self.vsp < 0:
-                            settings.sound_break.play()
-                            item.image = item.depleted[0]
-                            item.dead = True
-                            item.dead_brick = True
-                            self.vsp = 0
-                            try: 
-                                box.index(item)
-                                box.remove(item)
-                            except ValueError: pass
-                        self.rect.move_ip([-self.hsp, -self.vsp])
-                # BOX                     
-                if item.idx == 3 and item.type == 0:
-                    self.rect.move_ip([self.hsp, self.vsp])
-                    if self.rect.colliderect(item.rect):
-                        box.append(item)   
-                    if not item.dead:            
-                        if self.rect.collidepoint((item.rect.centerx, item.rect.bottom)) and self.vsp < 0:
-                            settings.sound_bump.play()
-                            item.image = item.depleted[0]
-                            item.dead = True  
-                            # check prize
-                            select = 1
-                            if self.life < self.max_life:
-                               select = random.randint(1,2)
-                            if select == 1: 
-                                # appear prize - coin
-                                settings.sound_coin.play()
-                                self.score += 1
-                                item.dead_box = True
-                            elif select == 2: 
-                                # appear prize - star
-                                settings.sound_life.play()
-                                self.life += 10
-                                item.star = True
-                                item.dead_box = True
-                    self.rect.move_ip([-self.hsp, -self.vsp])                  
-                # COIN
-                if item.idx == 3 and item.type == 1:
-                    if self.rect.colliderect(item.rect):
-                        settings.sound_coin.play()
-                        self.score += 1
-                        item.kill()
-        return box
-    
-     
-    def collide_enemy(self, enemies:pygame.sprite.Group):
-        # hit animation
-        if self.hit:
-            self.hit_counter += 1
-            if self.hit_counter < self.hit_delay//2: self.image = settings.dead[2]
-            else: self.image = settings.dead[1]
-            self.rect = self.image.get_rect(center=self.rect.center)
-            if self.hit_counter > self.hit_delay:
-                self.hit = False
-        else:   # check enemy collision   
-            for enemy in enemies:
-                if not enemy.killed and abs(self.rect.top - enemy.rect.top) < 100:
-                    if self.rect.colliderect(enemy.rect):
-                        offset = (enemy.rect.x - self.rect.x, enemy.rect.y - self.rect.y)
-                        collide = self.mask.overlap(enemy.mask, offset) 
-                        if collide and not self.hit:
-                            #hit player                        
-                            if self.rect.collidepoint((enemy.rect.left, enemy.rect.centery)) or \
-                                self.rect.collidepoint((enemy.rect.right, enemy.rect.centery)):                        
-                                #self.hsp = -int(self.jumpspeed)    # kick
-                                self.life -= 10 
-                                if self.life <=0:
-                                    self.life = 0
-                                    self.image = settings.dead[0]
-                                    self.rect = self.image.get_rect(midbottom=self.rect.midbottom)
-                                    settings.sound_dead.play()
-                                    return True
-                                else:
-                                    settings.sound_hit.play()                                
-                                    self.hit = True
-                                    self.hit_counter = 0
-                            else:
-                                #stomp kill
-                                if not self.hit and enemy.ID == 1:
-                                    if self.rect.collidepoint((enemy.rect.centerx, enemy.rect.top)):                        
-                                        self.vsp = -int(self.jumpspeed-self.speed)
-                                        enemy.killed = True
-                                        settings.play_sound(settings.sound_stomp)
-    
-     
-    def fire_enemy(self, enemies:pygame.sprite.Group, boxes, items):
-        # hit items
-        for item in items:            
-            for orb in self.orbs:
-                if abs(orb.rect.top - item.rect.top) < 100:
-                    if orb.rect.colliderect(item.rect):
-                        orb.kill()
-        # hit box
-        for box in boxes:
-            for orb in self.orbs:
-                if abs(orb.rect.top - box.rect.top) < 100:
-                    if orb.rect.colliderect(box.rect):
-                        orb.kill()
-        # hit enemy
-        for enemy in enemies:
-            for orb in self.orbs:
-                if not enemy.killed and abs(orb.rect.top - enemy.rect.top) < 100:
-                    if orb.rect.colliderect(enemy.rect):
-                        offset = (enemy.rect.x - orb.rect.x, enemy.rect.y - orb.rect.y)
-                        collide = orb.mask.overlap(enemy.mask, offset) 
-                        if collide:
-                            orb.kill()
-                            enemy.life -= 20
-             
-       
-    def check_gravity(self):
-        # gravity
-        if self.vsp < 20 and not self.onground:  # 9.8 rounded up
-            if self.facing_left: 
-                self.jump_animation(self.jump_cycle_flip, self.jump_cycle_flip_masks, self.vsp) 
-            else:
-                self.jump_animation(self.jump_cycle, self.jump_cycle_masks, self.vsp)
-            self.walk_count += 1
-            if self.walk_count > self.walk_delay:
-                self.vsp += self.gravity
-                self.walk_count = 0
-        if self.onground and self.vsp > 0:
-            self.vsp = 0
-        if self.onceil:
-            self.vsp = self.gravity
-                        
-         
-    def blit_text(self, texto, fonte, janela, x, y, delay=0, pos='topleft'):
-        if delay > 0:             
-            if self.text_count <= delay:
-                self.text_count += 1           
-                self.render_text(texto, fonte, janela, x, y, pos)     
-            else:
-                self.text_count = 0
-        else: self.render_text(texto, fonte, janela, x, y, pos)
-
-
-    def render_text(self, texto, fonte, janela, x, y, pos='topleft'):
-        objTexto = fonte.render(texto, True, settings.CORTEXTO)
-        rectTexto:pygame.Rect = objTexto.get_rect()
-        if pos == 'topleft': rectTexto.topleft = (x, y)
-        if pos == 'center': rectTexto.center = (x, y)
-        janela.blit(objTexto, rectTexto)
-        
-            
-    def adjust_move(self, x, y, boxes):
-        dx = x
-        dy = y    
-        while self.check_collision(dx, dy, boxes, "LEFT"):
-            dx -= 1
-        while self.check_collision(dx, dy, boxes, "RIGHT"):
-            dx += 1
-        while self.check_collision(dx, dy, boxes, "UP"):            
-            dy -= 1
-        while self.check_collision(dx, dy, boxes, "DOWN"):
-            dy += 1
-        self.rect.move_ip([dx, dy])
-        return dx, dy
-                        
-    
-    def check_collision(self, x, y, grounds, side=None):    
-        '''side="UP"|"DOWN"|"LEFT"|"RIGHT"'''
-        collide = None
-        rect = None        
-        self.rect.move_ip([x, y])                       
-        for ground in grounds:              
-            if self.rect.colliderect(ground.rect):
-                #if not side: rect = ground.rect
-                if side == "UP": rect = ground.rect_up     
-                if side == "DOWN": rect = ground.rect_down
-                if side == "LEFT": rect = ground.rect_left
-                if side == "RIGHT": rect = ground.rect_right           
-                collide = self.collide_mask_rect(self, rect)           
-                if collide: break 
-        self.rect.move_ip([-x, -y])        
-        return collide
-    
-    
-    def collide_mask_rect(self, left, right):
-        xoffset = right[0] - left.rect[0]
-        yoffset = right[1] - left.rect[1]
-        try:
-            leftmask = left.mask
-        except AttributeError:
-            leftmask = pygame.mask.Mask(left.size, True)
-        try:
-            rightmask = right.mask
-        except AttributeError:
-            rightmask = pygame.mask.Mask(right.size, True)
-        return leftmask.overlap(rightmask, (xoffset, yoffset))   
-         
-    
-    def walk_animation(self, images:list, masks:list, delay:int):
-        '''Enter with surface list and its masks
-        plus max delay to change surface
-        '''    
-        self.walk_animation_index, self.walk_count = self.animation(images,
-                masks, delay, self.walk_animation_index, self.walk_count)
-          
-    
-    def stand_animation(self, images:list, masks:list, delay:int):
-        '''Enter with surface list and its masks
-        plus max delay to change surface 
-        '''    
-        # for fun
-        light = settings.dance[0]
-        rect = light.get_rect()
-        rect.bottom = self.rect.bottom + 30
-        rect.centerx = self.rect.centerx
-        settings.screen.blit(light, rect)
-        #dance 
-        self.stand_animation_index, self.stand_count = self.animation(images,
-                masks, delay, self.stand_animation_index, self.stand_count)
-          
-    
-    def jump_animation(self, images:list, masks:list, speed:int):
-        '''Enter with surface list and its masks
-        plus max delay to change surface 
-        ''' 
-        index = self.jump_animation_index 
-                
-        if speed > 0: index = 2
-        else: index = 1
-        
-        # change img and mask after delay        
-        self.image = images[index]           
-        self.rect = self.image.get_rect(center=self.rect.center)        
-        self.mask = masks[index]   
-        
-        self.jump_animation_index = index
-       
+   
