@@ -137,8 +137,8 @@ class Mob1(Enemy):
                 self.dead_counter = 0
                 self.kill()
         else: 
-            dx2 = 0
-            dy2 = 0
+            dx2 = settings.mob_aggro_range + 1
+            dy2 = settings.mob_aggro_range + 1
             dx1 = abs(player.rect.left - self.rect.left)
             if player2: dx2 = abs(player2.rect.left - self.rect.left)
             dy1 = abs(player.rect.top - self.rect.top)
@@ -253,8 +253,8 @@ class Boss(Enemy):
                 if self.rect.center[0] > player2.rect.center[0]: self.side = "left"
                 else: self.side = "right"
                             
-            dx2 = 0
-            dy2 = 0
+            dx2 = settings.mob_aggro_range + 1
+            dy2 = settings.mob_aggro_range + 1
             dx1 = abs(player.rect.left - self.rect.left)
             if player2: dx2 = abs(player2.rect.left - self.rect.left)
             dy1 = abs(player.rect.top - self.rect.top)
