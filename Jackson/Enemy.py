@@ -1,6 +1,6 @@
 from .Sprite import Sprite
 from .Game import settings
-from .Player import Player
+from .Player import Player, Player2
 from .Particles import ParticleRay
 import random
 import pygame
@@ -117,7 +117,7 @@ class Mob1(Enemy):
         self.rect_right = pygame.Rect(self.rect.topright, (1,self.rect.bottomright[1] - self.rect.topright[1]))
         
         
-    def update(self, boxes, cenario_rect, player:Player=None, fire_list = None): 
+    def update(self, boxes, cenario_rect, player:Player=None, player2:Player2=None, fire_list = None): 
         # keep init rect
         if not self.rect_init:
             self.rect_init = self.rect       
@@ -136,10 +136,16 @@ class Mob1(Enemy):
             if self.dead_counter > self.dead_delay:
                 self.dead_counter = 0
                 self.kill()
-        else:            
-            # check movement in screen only - see ahead?
-            if self.rect.left > -100 and self.rect.left < settings.WIDTH+100 \
-                    and self.rect.top > -100 and self.rect.top < settings.HEIGHT+100:
+        else: 
+            dx2 = 0
+            dy2 = 0
+            dx1 = abs(player.rect.left - self.rect.left)
+            if player2: dx2 = abs(player2.rect.left - self.rect.left)
+            dy1 = abs(player.rect.top - self.rect.top)
+            if player2: dy2 = abs(player2.rect.top - self.rect.top)
+            # mob in range
+            if dx1 < settings.mob_aggro_range and dy1 < settings.mob_aggro_range \
+                or dx2 < settings.mob_aggro_range and dy2 < settings.mob_aggro_range:
                 diffX = self.hsp * self.direction_left
                 diffY = self.vsp * self.direction_down                
                 X, Y = self.adjust_move(diffX,diffY,boxes)
@@ -207,7 +213,7 @@ class Boss(Enemy):
         self.rect_right = pygame.Rect(self.rect.topright, (1,self.rect.bottomright[1] - self.rect.topright[1]))
         
         
-    def update(self, boxes, cenario_rect, player:Player=None, fire_list = None): 
+    def update(self, boxes, cenario_rect, player:Player=None, player2:Player2=None, fire_list = None): 
         # point of origin
         if not self.rect_init:
             self.rect_init = self.rect              
@@ -242,10 +248,20 @@ class Boss(Enemy):
             # check facing side          
             if self.rect.center[0] > player.rect.center[0]: self.side = "left"
             else: self.side = "right"
-                 
-            # check movement in screen only - see ahead?
-            if self.rect.left > -settings.WIDTH and self.rect.left < settings.WIDTH*2 \
-                    and self.rect.top > -settings.HEIGHT and self.rect.top < settings.HEIGHT*2: 
+            
+            if settings.multiplayer and settings.client:
+                if self.rect.center[0] > player2.rect.center[0]: self.side = "left"
+                else: self.side = "right"
+                            
+            dx2 = 0
+            dy2 = 0
+            dx1 = abs(player.rect.left - self.rect.left)
+            if player2: dx2 = abs(player2.rect.left - self.rect.left)
+            dy1 = abs(player.rect.top - self.rect.top)
+            if player2: dy2 = abs(player2.rect.top - self.rect.top)
+            # boss in range
+            if dx1 < settings.mob_aggro_range and dy1 < settings.mob_aggro_range \
+                or dx2 < settings.mob_aggro_range and dy2 < settings.mob_aggro_range:
                 # walk
                 diffX = self.hsp 
                 diffY = self.vsp                 
@@ -302,6 +318,9 @@ class Boss(Enemy):
             
             #check if is close enough
             if abs(self.rect.center[0] - player.rect.center[0]) < 50: self.hsp = 0  
+            if settings.multiplayer and settings.client:
+                if abs(self.rect.center[0] - player2.rect.center[0]) < 50: self.hsp = 0
+                
             self.onground = self.check_collision(0, 1, boxes, "UP")
             self.onceil = self.check_collision(0, -1, boxes, "DOWN")  
             self.check_gravity()             

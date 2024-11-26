@@ -55,6 +55,7 @@ class Settings:
         self.item_id = 1
         self.enemy_id = 1
         self.fire_dmg = 20
+        self.mob_aggro_range = 1000
         
         # warp XY        
         self.warp_left = 0

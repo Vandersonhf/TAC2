@@ -100,23 +100,15 @@ class Jackson():
             self.hazard = pygame.sprite.Group()
             self.hazard.add(self.enemies) 
             
-            self.player = Player(settings.WIDTH*0.1, (settings.map_lin-3)*settings.tile)            
+            self.player = Player(settings.WIDTH*0.1, (settings.map_lin-3)*settings.tile) 
+            self.player2 = None           
             #self.player2 = None
             if settings.multiplayer:
                 self.life_counter2 = 0
                 self.life_delay2 = 20
                 self.life_show2 = True
                 self.player2 = Player2(settings.WIDTH*0.1, (settings.map_lin-3)*settings.tile)
-            
-            #boom = NiceEffect()
-            #boom.rays(self.cenario, self.cenario_rect)
-            #boom.sparks(self.cenario, self.cenario_rect)
-            #boom.fireworks1(self.cenario, self.cenario_rect)
-            #boom.fireworks(self.cenario, self.cenario_rect)
-            #boom.light()
-            #boom.light2()
-            #boom.fire()
-            
+                                    
             self.main_loop()
             
             # Parando o jogo e mostrando a tela final.            
@@ -142,18 +134,18 @@ class Jackson():
                     # update cenario, players, items, etc.                   
                     self.player2.update(self.ground, self.hazard, self.cenario_rect, self.loot)
                 self.draw_panel2()
-                               
+                       
+            #update game elements 
             self.update_game()
                                         
             # Panel      
             self.draw_panel()          
                                               
             #update screen
-            #pygame.display.flip()
             pygame.display.update()
-            #settings.clock.tick(settings.fps)            
-            if not self.cenario_rect: return
-            if len(self.enemies) == 0: return   #WIN
+                       
+            if not self.cenario_rect: return    # dead
+            if len(self.enemies) == 0: return   # WIN
     
     
     def update_game(self):        
@@ -164,7 +156,7 @@ class Jackson():
         self.ground.update()              
         self.items.update(self.cenario_rect) 
         self.coins.update(self.cenario_rect)            
-        self.enemies.update(self.solid, self.cenario_rect, self.player, self.boss_fire_list)
+        self.enemies.update(self.solid, self.cenario_rect, self.player, self.player2, self.boss_fire_list)
         #self.fire_pit.update(self.cenario_rect)
         for p in self.fire_pit: p.update(self.cenario_rect)
         if self.boss_fire_list: self.boss_fire_list.update(self.cenario_rect, self.ground, self.items)

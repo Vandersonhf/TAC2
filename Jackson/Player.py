@@ -772,7 +772,7 @@ class Player2(Player):
     def update(self, boxes, enemies, cenario_rect:pygame.Rect, items):
         dtop = 0
         dleft = 0
-        # correction position
+        # position correction
         if self.old_cenario:
             if self.old_cenario[0] != cenario_rect.top or \
                 self.old_cenario[1] != cenario_rect.left:
@@ -794,34 +794,21 @@ class Player2(Player):
         ini_pos = [left, top]        
         self.check_p2(pygame.Rect(ini_pos,(self.rect.width, self.rect.height)))
         self.orbs.update(cenario_rect)
-        
-        #collide enemy, items, etc
-        #dead = self.collide_enemy(enemies)
-        #if self.rect.bottom + self.vsp > cenario_rect.bottom: dead = True
-        #if dead: 
-        #    self.draw(settings.screen)
-        #    return False
-        #self.fire_enemy(enemies, boxes, items) 
-        #box = self.collide_item(items)
-        #if len(box) > 0: boxes.add(box)
-        
-        #self.check_items()
-        
+                        
+        box = self.collide_item(items)        
+        if len(box) > 0: boxes.add(box)  
+                
         # movement - player 
         self.adjust_move(self.hsp, self.vsp, boxes)
-        
-        
+                
         # read message buffer
         if len(settings.buffer_in)>0:
             message:str = settings.buffer_in.pop(0)
-            #print(message)
             message_list = message.split(settings.sep)
-            # code 001 - move       
+            # move       
             old_center = (self.rect.center[0], self.rect.center[1])                   
             if message_list[0] == 'move':
                 self.count_idle = 0
-                #print(message, message_list)
-                #print("p2 ", cenario_rect, self.rect.center)
                 p2x = int(message_list[1])
                 p2y = int(message_list[2])
                 cenario_left = int(message_list[3])
@@ -839,7 +826,7 @@ class Player2(Player):
                 # fix jump animation
                 if self.rect.center[1] < old_center[1]:
                     self.vsp = 0
-            # code 002 - shoot
+            # shoot
             if message_list[0] == 'shoot':
                 settings.event_p2.append('shoot')
             if message_list[0] == 'face_left':
@@ -867,10 +854,8 @@ class Player2(Player):
                         item.image = item.depleted[0]
                         item.dead = True                             
                         if select == 1: 
-                            # appear prize - coin
                             settings.sound_coin.play()                                
                         elif select == 2: 
-                            # appear prize - star
                             settings.sound_life.play()                                
                             item.star = True
                         item.dead_box = True                   
@@ -895,8 +880,8 @@ class Player2(Player):
         self.nb.update(self.rect.centerx, self.rect.top - 40)
           
         self.draw(settings.screen)
-     
     
+            
     def check_p2(self, ini_rect):
         """check player 2 message events"""        
         #for event in pygame.event.get():
@@ -910,7 +895,6 @@ class Player2(Player):
                 self.count_idle = 0                     
             # shoot orb
             if (event == "shoot"):
-                #print("SHOOT")
                 self.count_idle = 0                                   
                 fire = FireOrb(ini_rect)
                 if self.facing_left: 
@@ -925,35 +909,13 @@ class Player2(Player):
                     fire.direction_left = -1                   
                 self.orbs.add(fire)
                 settings.play_sound(settings.sound_fire) 
-                #print("done") 
             #get down - handle press hold
             if (event == "down") and self.onground:
                 self.count_idle = 0
                 #self.hsp = 0
                 if self.facing_left: self.image = settings.dead_flip[1]
                 else: self.image = settings.dead[1]
-                self.rect = self.image.get_rect(midbottom=self.rect.midbottom)
-            elif (event == "left"):
-                self.facing_left = True
-                self.count_idle = 0
-                if self.onground:
-                    self.walk_animation(self.walk_cycle_flip, self.walk_cycle_flip_masks, self.walk_delay)
-                #self.hsp = -self.speed
-            elif (event == "right"):
-                self.facing_left = False
-                self.count_idle = 0
-                if self.onground:
-                    self.walk_animation(self.walk_cycle, self.walk_cycle_masks,self.walk_delay)
-                #self.hsp = self.speed             
-            #jump
-            if (event == "up") and self.onground:
-                self.count_idle = 0
-                #self.vsp = -self.jumpspeed
-                settings.play_sound(settings.sound_jump)
-            # variable height jumping
-            if (event == "jump"):
-                if self.vsp < -self.min_jumpspeed:
-                    self.vsp = -self.min_jumpspeed             
+                self.rect = self.image.get_rect(midbottom=self.rect.midbottom)                       
         #empty event list
         settings.event_p2 = []
         
@@ -977,5 +939,28 @@ class Player2(Player):
             settings.particle_group.update(settings.dt)
                              
         
+    def collide_item(self, items):
+        box = []
+        for item in items:
+            if abs(self.rect.top - item.rect.top) < 100:
+                # BRICK
+                if item.idx == 0 and item.type == 1:
+                    if not item.dead:
+                        if self.rect.colliderect(item.rect):
+                            box.append(item)
+                        self.rect.move_ip([self.hsp, self.vsp])
+                        if item.rect.collidepoint((self.rect.centerx, self.rect.top)) and self.vsp < 0:                        
+                            try: 
+                                box.index(item)
+                                box.remove(item)
+                            except ValueError: pass  
+                        self.rect.move_ip([-self.hsp, -self.vsp])                          
+                # BOX                     
+                if item.idx == 3 and item.type == 0:
+                    self.rect.move_ip([self.hsp, self.vsp])
+                    if self.rect.colliderect(item.rect):
+                        box.append(item)   
+                    self.rect.move_ip([-self.hsp, -self.vsp])                    
+        return box
     
    
