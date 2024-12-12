@@ -18,11 +18,11 @@ class Settings:
     def setup(self, debug:bool):        
         self.debug = debug
         pygame.init()
-        #self.WIDTH, self.HEIGHT = pygame.display.get_desktop_sizes()[0]
-        self.WIDTH, self.HEIGHT = (700,600)
+        self.WIDTH, self.HEIGHT = pygame.display.get_desktop_sizes()[0]
+        #self.WIDTH, self.HEIGHT = (700,600)
         self.disp_size = (self.WIDTH, self.HEIGHT)
         self.screen = pygame.display.set_mode(self.disp_size)
-        #pygame.display.toggle_fullscreen()
+        pygame.display.toggle_fullscreen()
         self.clock = pygame.time.Clock()
         self.dt = 0
         self.particle_group = pygame.sprite.Group()
@@ -55,7 +55,7 @@ class Settings:
         self.item_id = 1
         self.enemy_id = 1
         self.fire_dmg = 20
-        self.mob_aggro_range = 1000
+        self.mob_aggro_range = 1600
         
         # warp XY        
         self.warp_left = 0

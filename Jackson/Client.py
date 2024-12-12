@@ -2,13 +2,28 @@ import socket
 from .Game import settings
 
 class AppClient:
-    def __init__(self, host, port):        
+    def __init__(self, host, port, iprange = 0):        
         self.host = host
         self.port = port    
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)    
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.iprange = iprange    
+        #self.find_host()
 
+    def find_host(self):
+        abcd = self.host.split('.')
+        for d in range(int(abcd[3]), int(abcd[3])+self.iprange+1):
+            self.host = f'{abcd[0]}.{abcd[1]}.{abcd[2]}.{d}'
+            try:  
+                print("trying ", self.host)        
+                self.socket.connect((self.host, self.port))
+                self.socket.close()
+                print('found', self.host)
+                return 
+            except: pass
+    
     def connect_server(self):     
-        try:          
+        try: 
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)         
             self.socket.connect((self.host, self.port))
             self.conn = self.socket
             settings.client_connected = True

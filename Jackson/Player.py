@@ -427,25 +427,29 @@ class Player(Sprite):
                         self.create_message('shoot'+settings.sep, message)
             # save game
             if (event.type == KEYDOWN and event.key == K_F5): 
-                    sql_update(self.score, self.life)
+                    '''sql_update(self.score, self.life)
                     self.text_count = 1     # check count outside for loop
-                    self.message = "Game Saved!!!"
-                    '''save = f"{self.score},{self.life}"
+                    self.message = "Game Saved!!!"'''
+                    save = f"{self.score},{self.life}"
                     self.text_count += 1
-                    with open("save.txt", "w") as arq:                        
-                        arq.write(save)''' 
+                    with open("Jackson/save_game.txt", "w") as arq:                        
+                        arq.write(save)
+                        self.text_count = 1     # check count outside for loop
+                        self.message = "Game Saved!!!"
             # load game
             if (event.type == KEYDOWN and event.key == K_F6):
-                    dados = sql_request() 
+                    '''dados = sql_request() 
                     self.score = dados[0]
                     self.life = dados[1]
                     self.text_count = 1
-                    self.message = "Game Load success!"
-                    '''with open("save.txt", "r") as arq:
+                    self.message = "Game Load success!"'''
+                    with open("Jackson/save_game.txt", "r") as arq:
                         dados = arq.read()
                         val = dados.split(",")
                         self.score = int(val[0])
-                        self.life = int(val[1])'''        
+                        self.life = int(val[1])
+                        self.text_count = 1
+                        self.message = "Game Load success!"
         # update fire counter            
         if self.orb_counter <= self.orb_delay: self.orb_counter += 1                                                   
         #get down - handle press hold

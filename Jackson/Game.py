@@ -34,7 +34,7 @@ class Jackson():
                     threading.Thread(target=self.server_thread).start()
                     self.new_game()       
                 elif select == 2:
-                    # cliente                    
+                    # cliente     
                     settings.client = True
                     threading.Thread(target=self.client_thread).start()
                     self.new_game()
@@ -49,11 +49,13 @@ class Jackson():
                 self.exit()
     
     def server_thread(self):
-        settings.server_socket = AppServer("localhost", 5041)
+        settings.server_socket = AppServer("0.0.0.0", 5041)
         settings.server_socket.server_listen()
         
-    def client_thread(self):      
-        settings.client_socket = AppClient("localhost",  5041)
+    def client_thread(self): 
+        with open("Jackson/host.txt", "r") as arq:
+            ip = arq.read() 
+        settings.client_socket = AppClient(ip,  5041, 20)       
         settings.client_socket.connect_server()  
         settings.client_socket.receive_messages()
     
@@ -129,11 +131,12 @@ class Jackson():
             if settings.multiplayer:
                 if settings.server:                    
                     if settings.client_connected:
-                        self.player2.update(self.ground, self.hazard, self.cenario_rect, self.loot)                    
+                        self.player2.update(self.ground, self.hazard, self.cenario_rect, self.loot)  
+                        self.draw_panel2()                  
                 if settings.client:
                     # update cenario, players, items, etc.                   
                     self.player2.update(self.ground, self.hazard, self.cenario_rect, self.loot)
-                self.draw_panel2()
+                    self.draw_panel2()
                        
             #update game elements 
             self.update_game()
@@ -165,7 +168,10 @@ class Jackson():
     
     def draw_panel2(self):
         # blit panel
-        self.blit_text(f'PLAYER: Zé2', settings.fonte, settings.screen, settings.WIDTH-10, 10, pos='topright')
+        if settings.client:
+            self.blit_text(f'PLAYER: 1', settings.fonte, settings.screen, settings.WIDTH-10, 10, pos='topright')
+        else: 
+            self.blit_text(f'PLAYER: 2', settings.fonte, settings.screen, settings.WIDTH-10, 10, pos='topright')        
         settings.screen.blit(settings.coin[0], pygame.Rect(settings.WIDTH-120,90,settings.base_tile,settings.base_tile))
         self.blit_text(f':{self.player2.score}', settings.fonte, settings.screen, settings.WIDTH-80, 100, pos='topleft')             
         cor = VERDE
@@ -193,8 +199,11 @@ class Jackson():
     
     
     def draw_panel(self):
-        # blit panel
-        self.blit_text(f'PLAYER: Zé', settings.fonte, settings.screen, 10, 10)
+        # blit panel      
+        if settings.multiplayer and settings.client:
+            self.blit_text(f'PLAYER: 2', settings.fonte, settings.screen, 10, 10)
+        else: 
+            self.blit_text(f'PLAYER: 1', settings.fonte, settings.screen, 10, 10)
         #self.blit_text(f'Kill all enemies to win!', settings.fonte, settings.screen, 350, 90)
         #self.blit_text(f'CTRL:run,SPACE:shoot,M:on/off music',
         #                settings.fonte, settings.screen, 350, 10)
